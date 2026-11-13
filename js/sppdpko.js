@@ -34,11 +34,15 @@ const HIRARKI_JABATAN = [
 ];
 
 document.addEventListener('DOMContentLoaded', async () => {
-    await loadInitialData();
-    populateSelects();
-    renderPengikutTable();
-    updateSKQuotaInfo();
-    hitungLamaHariOtomatis();
+    try {
+        await loadInitialData();
+        populateSelects();
+        renderPengikutTable();
+        updateSKQuotaInfo();
+        hitungLamaHariOtomatis();
+    } catch (err) {
+        console.error("Terjadi kesalahan saat inisialisasi aplikasi:", err);
+    }
 });
 
 /**
