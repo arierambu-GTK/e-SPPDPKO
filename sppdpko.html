@@ -17,8 +17,9 @@
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#ea580c">
-    <link rel="apple-touch-icon" href="https://supabase.com/dashboard/project/qhflpzinfgpspjmjfgjd/storage/files/buckets/gambar?preview=logo_st.png">
-    <link rel="icon" type="image/png" href="https://supabase.com/dashboard/project/qhflpzinfgpspjmjfgjd/storage/files/buckets/gambar?preview=logo_st.png">
+    <!-- PERBAIKAN: Menggunakan Public URL Supabase Storage yang valid -->
+    <link rel="apple-touch-icon" href="https://qhflpzinfgpspjmjfgjd.supabase.co/storage/v1/object/public/gambar/logo_st.png">
+    <link rel="icon" type="image/png" href="https://qhflpzinfgpspjmjfgjd.supabase.co/storage/v1/object/public/gambar/logo_st.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -51,7 +52,8 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
                 <div class="flex items-center space-x-3">
-                    <img src="https://supabase.com/dashboard/project/qhflpzinfgpspjmjfgjd/storage/files/buckets/gambar?preview=logo_st.png" 
+                    <!-- PERBAIKAN: Menggunakan Public URL Supabase Storage yang valid -->
+                    <img src="https://qhflpzinfgpspjmjfgjd.supabase.co/storage/v1/object/public/gambar/logo_st.png" 
                          alt="Logo Pemda Sumba Timur" class="h-10 w-auto object-contain">
                     <div>
                         <h1 class="font-bold text-base sm:text-lg leading-tight">e-SPPD Dinas PKO</h1>
@@ -576,7 +578,7 @@
     document.addEventListener('DOMContentLoaded', updateNetworkBadge);
     </script>
   
-    <!-- SCRIPT INCLUSION LAYER -->
+    <!-- SCRIPT INCLUSION LAYER: Pastikan file di dalam folder js/ bernama db.js dan sppdpko.js -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/db.js"></script>
     <script src="js/sppdpko.js"></script>
