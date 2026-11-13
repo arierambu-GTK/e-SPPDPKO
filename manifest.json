@@ -1,0 +1,20 @@
+{
+  "name": "e-SPPD Dinas PKO Sumba Timur",
+  "short_name": "e-SPPD PKO",
+  "start_url": "./sppdpko.html",
+  "display": "standalone",
+  "background_color": "#fff7ed",
+  "theme_color": "#ea580c",
+  "icons": [
+    {
+      "src": "https://offeebouiohweqlgyccx.supabase.co/storage/v1/object/public/image/logo_st.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://offeebouiohweqlgyccx.supabase.co/storage/v1/object/public/image/logo_st.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
