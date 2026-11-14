@@ -571,9 +571,9 @@ async function deleteAsnMaster(nip) {
 }
 
 /**
- * Helper Parser CSV yang aman terhadap koma di dalam tanda kutip (quotes)
+ * Helper Parser CSV yang handal untuk pemisah titik koma (;) maupun koma (,) serta tanda kutip
  */
-function parseCSVLine(text) {
+function parseCSVLine(text, delimiter = ',') {
     const result = [];
     let entry = '';
     let inQuotes = false;
@@ -581,7 +581,7 @@ function parseCSVLine(text) {
         const char = text[i];
         if (char === '"') {
             inQuotes = !inQuotes;
-        } else if ((char === ',' || char === ';') && !inQuotes) {
+        } else if (char === delimiter && !inQuotes) {
             result.push(entry.trim().replace(/^"|"$/g, ''));
             entry = '';
         } else {
@@ -610,61 +610,61 @@ async function importAsnFromCsv() {
             return;
         }
 
-        // Deteksi header kolom secara dinamis
-        const headerCols = parseCSVLine(lines[0]).map(h => h.toLowerCase());
+        // Otomatis deteksi pemisah: jika baris pertama mengandung ';', gunakan ';', jika tidak gunakan ','
+        const delimiter = lines[0].includes(';') ? ';' : ',';
+
+        // Baca header baris pertama
+        const headerCols = parseCSVLine(lines[0], delimiter).map(h => h.toLowerCase().trim());
         
-        let idxNip = -1;
         let idxNama = -1;
+        let idxNip = -1;
         let idxPangkat = -1;
         let idxJabatan = -1;
 
         headerCols.forEach((h, idx) => {
-            if (h.includes('nip')) idxNip = idx;
-            else if (h.includes('nama')) idxNama = idx;
+            if (h.includes('nama')) idxNama = idx;
+            else if (h.includes('nip')) idxNip = idx;
             else if (h.includes('pangkat') || h.includes('gol')) idxPangkat = idx;
             else if (h.includes('jabatan')) idxJabatan = idx;
         });
 
-        const hasHeader = idxNip !== -1 || idxNama !== -1;
-        let startIndex = hasHeader ? 1 : 0;
+        // Jika header terdeteksi, mulai baca dari baris ke-1, jika tidak dari baris ke-0
+        const hasHeader = idxNama !== -1 || idxNip !== -1;
+        const startIndex = hasHeader ? 1 : 0;
         const importedList = [];
 
         for (let i = startIndex; i < lines.length; i++) {
-            const cols = parseCSVLine(lines[i]);
+            const cols = parseCSVLine(lines[i], delimiter);
             if (cols.length < 2) continue;
 
-            let nip = '';
             let nama = '';
+            let nip = '';
             let pangkat = '';
             let jabatan = '';
 
             if (hasHeader) {
-                nip = idxNip !== -1 ? cols[idxNip] : '';
-                nama = idxNama !== -1 ? cols[idxNama] : '';
-                pangkat = idxPangkat !== -1 ? cols[idxPangkat] : '';
-                jabatan = idxJabatan !== -1 ? cols[idxJabatan] : '';
+                nama = idxNama !== -1 && cols[idxNama] !== undefined ? cols[idxNama] : '';
+                nip = idxNip !== -1 && cols[idxNip] !== undefined ? cols[idxNip] : '';
+                pangkat = idxPangkat !== -1 && cols[idxPangkat] !== undefined ? cols[idxPangkat] : '';
+                jabatan = idxJabatan !== -1 && cols[idxJabatan] !== undefined ? cols[idxJabatan] : '';
             } else {
-                // Fallback urutan standar: NIP, NAMA, PANGKAT, JABATAN
-                if (/^\d{15,20}$/.test(cols[0])) {
-                    nip = cols[0];
-                    nama = cols[1] || '';
-                    pangkat = cols[2] || '';
-                    jabatan = cols[3] || 'Pelaksana / Staf';
-                } else {
-                    // Fallback alternatif jika kolom pertama adalah Nama
-                    nama = cols[0];
-                    nip = cols[1] || '';
-                    pangkat = cols[2] || '';
-                    jabatan = cols[3] || 'Pelaksana / Staf';
-                }
+                // Fallback urutan default berdasarkan struktur file Anda: nama, nip, pangkat, jabatan
+                nama = cols[0] || '';
+                nip = cols[1] || '';
+                pangkat = cols[2] || '';
+                jabatan = cols[3] || '';
             }
 
-            if (nama || nip) {
+            // Bersihkan dan validasi data
+            const cleanNip = String(nip).trim().replace(/['"]/g, '');
+            const cleanNama = String(nama).trim().toUpperCase();
+
+            if (cleanNama || cleanNip) {
                 importedList.push({
-                    nip: nip || '-',
-                    nama: nama.toUpperCase(),
-                    pangkat: pangkat || '',
-                    jabatan: jabatan || 'Pelaksana / Staf'
+                    nip: cleanNip || '-',
+                    nama: cleanNama || 'TANPA NAMA',
+                    pangkat: String(pangkat).trim(),
+                    jabatan: String(jabatan).trim() || 'Pelaksana / Staf'
                 });
             }
         }
@@ -683,7 +683,7 @@ async function importAsnFromCsv() {
         populateSelects();
         renderPengikutTable();
         fileInput.value = '';
-        alert(`Berhasil mengimpor ${importedList.length} data ASN ke tabel master_pelaksana!`);
+        alert(`Berhasil mengimpor ${importedList.length} data ASN ke database master_pelaksana!`);
     };
 
     reader.readAsText(file);
