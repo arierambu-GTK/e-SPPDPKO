@@ -1,0 +1,1272 @@
+<!-- 
+  ====================================================================================
+  Nama Aplikasi : Sistem e - SPPD Terpadu - Dinas Pendidikan, Kepemudaan dan Olahraga
+  Hosting       : GitHub Pages (Murni Single Page Application / SPA)
+  Backend / DB  : Supabase REST API & Supabase Storage (js/db.js)
+  Nama Halaman  : cetak_dpko.html (Modul Pratinjau & Cetak Dokumen Terpadu)
+  Fungsi Halaman: Menampilkan pratinjau dan fungsi cetak PDF resmi untuk 5 bagian 
+                  dokumen (Surat Tugas, SPPD Depan, SPPD Belakang Isi, Laporan, Kwitansi).
+  ====================================================================================
+-->
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>e-SPPD Terpadu - Dinas Pendidikan, Kepemudaan dan Olahraga</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ea580c">
+    <link rel="apple-touch-icon" href="https://offeebouiohweqlgyccx.supabase.co/storage/v1/object/public/image/logo_st.png">
+    <link rel="icon" type="image/png" href="https://offeebouiohweqlgyccx.supabase.co/storage/v1/object/public/image/logo_st.png">
+
+    <!-- CDN Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/dexie@3.2.4/dist/dexie.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        gov: {
+                            50: '#fff7ed', 100: '#ffedd5', 600: '#ea580c',
+                            700: '#c2410c', 800: '#9a3412', 900: '#7c2d12',
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        /* Pengaturan Halaman Cetak Kertas F4 (215mm x 330mm) */
+        @page {
+            size: 215mm 330mm portrait;
+            margin: 15mm 12.5mm;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #525659;
+            color: #000000;
+        }
+
+        /* Lembar Kertas di Layar */
+        .page {
+            width: 215mm;
+            min-height: 330mm;
+            padding: 15mm 12.5mm;
+            margin: 20px auto;
+            background: #ffffff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            page-break-after: always;
+            break-after: page;
+        }
+        
+        /* Border Kop Ganda */
+        .border-kop-double {
+            border-bottom: 4px double #000;
+        }
+
+        /* Format Typography Surat Tugas & Laporan */
+        table.content-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 8px;
+            font-size: 10pt;
+            line-height: 1.4;
+        }
+
+        table.content-table td {
+            vertical-align: top;
+            padding: 2px 0;
+            letter-spacing: -0.2px;
+        }
+
+        .col-label {
+            width: 130px;
+            white-space: nowrap;
+        }
+
+        .col-colon {
+            width: 18px;
+            text-align: center;
+        }
+
+        .sub-label {
+            width: 135px;
+        }
+
+        .pegawai-num {
+            width: 22px;
+            vertical-align: top;
+        }
+
+        .pegawai-item {
+            margin-bottom: 6px;
+        }
+
+        /* Format Tabel SPPD Depan */
+        .table-sppd-depan {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9.5pt;
+            line-height: 1.35;
+            margin-top: 10px;
+        }
+
+        .table-sppd-depan td {
+            border: 1px solid #000000;
+            padding: 4px 6px;
+            vertical-align: top;
+        }
+
+        /* Format Tabel SPPD Belakang (Isi & Kosong) */
+        .sppd-bisi-container {
+            font-size: 10.5pt;
+            line-height: 1.15;
+            color: #000;
+        }
+
+        .sppd-bisi-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 0px;
+        }
+
+        .sppd-bisi-table td, .sppd-bisi-table th {
+            border: 1px solid #000;
+            padding: 4px 6px;
+            vertical-align: top;
+        }
+
+        .sppd-bisi-col-half {
+            width: 50%;
+        }
+
+        .sppd-bisi-inner-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .sppd-bisi-inner-table td {
+            border: none;
+            padding: 1px 3px;
+            vertical-align: top;
+        }
+
+        .sppd-bisi-catatan-box {
+            min-height: 55px;
+        }
+
+        .sppd-bisi-route-signature-box {
+            margin-top: 25px;
+            text-align: center;
+            line-height: 1.15;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            min-height: 90px;
+        }
+
+        .sppd-bisi-route-signature-name {
+            font-weight: bold;
+            font-size: 9.5pt;
+            width: 100%;
+        }
+
+        .sppd-bisi-signature-sec {
+            margin-top: 10px;
+            width: 100%;
+            text-align: center;
+            line-height: 1.15;
+        }
+
+        .sppd-bisi-signature-title {
+            font-weight: bold;
+            margin-bottom: 80px;
+        }
+
+        .sppd-bisi-signature-name {
+            font-weight: bold;
+            text-decoration: underline;
+        }
+
+        .sppd-bisi-perhatian-cell {
+            padding: 6px 8px;
+            font-size: 8.5pt;
+            text-align: justify;
+            line-height: 1.15;
+        }
+
+        .sppd-bisi-perhatian-title {
+            font-weight: bold;
+        }
+
+        /* Format Tabel Presisi Kwitansi */
+        .table-f4 {
+            width: 190mm !important;
+            max-width: 190mm !important;
+            min-width: 190mm !important;
+            font-size: 7pt;
+            margin: 0 auto;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        .table-f4 td {
+            border: 1px solid #000000;
+            padding: 0 2px;
+            font-size: 7pt;
+            text-align: center;
+            vertical-align: middle;
+            word-wrap: break-word;
+            overflow: hidden;
+            letter-spacing: -0.3px;
+            height: 25px !important;
+            max-height: 25px !important;
+            line-height: 1.5 !important;
+        }
+
+        .table-f4 tr.row-dynamic td {
+            height: auto !important;
+            max-height: none !important;
+            padding-top: 4px;
+            padding-bottom: 4px;
+        }
+
+        .spaced-dots {
+            background-image: linear-gradient(to right, black 20%, rgba(255, 255, 255, 0) 0%);
+            background-position: bottom;
+            background-size: 6px 1px;
+            background-repeat: repeat-x;
+        }
+
+        .w-7 { width: 7px !important; }
+        .w-8 { width: 8px !important; }
+        .w-10 { width: 10px !important; }
+        .w-12 { width: 12px !important; }
+        .w-15 { width: 15px !important; }
+        .w-20 { width: 10px !important; }
+        .w-23 { width: 23px !important; }
+        .w-25 { width: 25px !important; }
+        .w-30 { width: 30px !important; }
+        .w-40 { width: 40px !important; }
+        .w-50 { width: 50px !important; }
+        .w-55 { width: 55px !important; }
+        .w-60 { width: 60px !important; }
+        .w-77 { width: 77px !important; }
+        .w-80 { width: 80px !important; }
+
+        @media print {
+            body { background: none; }
+            .no-print { display: none !important; }
+            .page {
+                width: 100%;
+                min-height: auto;
+                margin: 0;
+                padding: 0;
+                box-shadow: none;
+            }
+            .table-f4 th {
+                background-color: #eee !important;
+                -webkit-print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-700 text-slate-900 min-h-screen">
+
+    <!-- HEADER / NAVIGATION BAR -->
+    <header class="no-print bg-gov-900 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row items-center justify-between py-2 md:h-16 gap-2">
+                <div class="flex items-center space-x-3 shrink-0">
+                    <img src="https://offeebouiohweqlgyccx.supabase.co/storage/v1/object/public/image/logo_st.png" 
+                         alt="Logo Pemda Sumba Timur" class="h-10 w-auto object-contain">
+                    <div>
+                        <h1 class="font-bold text-base sm:text-lg leading-tight">e-SPPD Dinas PKO</h1>
+                        <p class="text-xs text-gov-100">Kabupaten Sumba Timur</p>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-center gap-1.5 text-xs">
+                    <a href="#bagian-1" class="px-2.5 py-1 bg-gov-700 hover:bg-gov-600 rounded font-medium transition text-white">1. Surat Tugas</a>
+                    <a href="#bagian-2" class="px-2.5 py-1 bg-gov-700 hover:bg-gov-600 rounded font-medium transition text-white">2. SPPD Depan</a>
+                    <a href="#bagian-3" class="px-2.5 py-1 bg-gov-700 hover:bg-gov-600 rounded font-medium transition text-white">3. SPPD Belakang</a>
+					<a href="#bagian-4" class="px-2.5 py-1 bg-gov-700 hover:bg-gov-600 rounded font-medium transition text-white">4. Laporan</a>
+					<a href="#bagian-5" class="px-2.5 py-1 bg-gov-700 hover:bg-gov-600 rounded font-medium transition text-white">5. Kwitansi</a>
+                </div>
+
+                <div class="flex items-center space-x-2 shrink-0">
+                    <div id="networkBadge" class="px-2.5 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 shadow-sm"></div>
+					
+					<a href="sppdpko.html" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-sm border border-amber-500">
+                        <i class="fa-solid fa-arrow-left"></i> Modul e-SPPD
+                    </a>
+                    <button type="button" onclick="window.print()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer">
+                        <i class="fa-solid fa-print"></i> Cetak Dokumen
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- BAGIAN 1: SURAT TUGAS -->
+    <div id="bagian-1" class="page">
+        <div class="flex items-center justify-between border-kop-double pb-2 mb-4">
+            <img src="https://offeebouiohweqlgyccx.supabase.co/storage/v1/object/public/image/logo_st.png" alt="Logo ST" class="h-20 w-auto object-contain">
+            <div class="text-center flex-1 px-2">
+                <h3 class="text-base font-bold uppercase tracking-wider">PEMERINTAH KABUPATEN SUMBA TIMUR</h3>
+                <h2 class="text-lg font-extrabold uppercase tracking-wide">DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA</h2>
+                <p class="text-xs italic">Jl. Jenderal Soeharto No. 50, Hambala, Kec. Kota Waingapu, Sumba Timur</p>
+                <p class="text-xs italic">Telepon: (0387) 61213 | Email: dikpora.sumbatimur@gmail.com</p>
+            </div>
+        </div>
+
+        <div class="text-center my-4">
+            <h1 class="text-base font-bold underline uppercase tracking-wide">SURAT TUGAS</h1>
+            <p class="text-xs mt-1">Nomor: <span id="st-noSuratTugas">-</span></p>
+        </div>
+
+        <table class="content-table">
+            <tr>
+                <td class="col-label">Dasar</td>
+                <td class="col-colon">:</td>
+                <td class="text-justify" id="st-dasar">
+                    DPA Dinas Pendidikan, Kepemudaan dan Olahraga Kabupaten Sumba Timur Tahun Anggaran 2026<br>
+                    Sub Kegiatan <span id="st-kodeSK">-</span> <span id="st-namaSK">-</span>.
+                </td>
+            </tr>
+        </table>
+
+        <div class="text-center font-bold tracking-widest my-3 uppercase text-xs">
+            MEMERINTAHKAN:
+        </div>
+
+        <table class="content-table">
+            <tr>
+                <td class="col-label">Kepada</td>
+                <td class="col-colon">:</td>
+                <td id="st-container-pegawai"></td>
+            </tr>
+        </table>
+
+        <table class="content-table">
+            <tr>
+                <td class="col-label">Untuk</td>
+                <td class="col-colon">:</td>
+                <td class="text-justify" id="st-maksudPerdin">-</td>
+            </tr>
+        </table>
+
+        <div class="flex justify-end mt-6">
+            <div class="w-64 text-left text-xs leading-normal">
+                <p>Dikeluarkan di : <span id="st-tempatDikeluarkan">Waingapu</span></p>
+                <p>pada tanggal : <span id="st-tglDikeluarkan">-</span></p>
+                <br>
+                <p class="font-bold" id="st-ttd-jabatan">Kepala Dinas Pendidikan, Kepemudaan dan Olahraga,</p>
+                <div class="h-16"></div>
+                <p class="font-bold underline uppercase" id="st-ttd-nama">-</p>
+                <p id="st-ttd-pangkat">-</p>
+                <p>NIP. <span id="st-ttd-nip">-</span></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- BAGIAN 2: SPPD DEPAN -->
+    <div id="bagian-2" class="page">
+        <div class="flex items-center justify-between border-kop-double pb-2 mb-3">
+            <img src="https://offeebouiohweqlgyccx.supabase.co/storage/v1/object/public/image/logo_st.png" alt="Logo ST" class="h-20 w-auto object-contain">
+            <div class="text-center flex-1 px-2">
+                <h3 class="text-base font-bold uppercase tracking-wider">PEMERINTAH KABUPATEN SUMBA TIMUR</h3>
+                <h2 class="text-lg font-extrabold uppercase tracking-wide">DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA</h2>
+                <p class="text-xs italic">Jl. Jenderal Soeharto No. 50, Hambala, Kec. Kota Waingapu, Sumba Timur</p>
+                <p class="text-xs italic">Telepon: (0387) 61213 | Email: dikpora.sumbatimur@gmail.com</p>
+            </div>
+        </div>
+
+        <div class="flex justify-end text-xs mb-2">
+            <table class="text-xs">
+                <tr><td class="pr-2">Lembar Ke</td><td>:</td><td class="pl-1">.......</td></tr>
+                <tr><td class="pr-2">Kode No</td><td>:</td><td class="pl-1">.......</td></tr>
+                <tr><td class="pr-2">Nomor</td><td>:</td><td class="pl-1" id="sppd-noSPPD">-</td></tr>
+            </table>
+        </div>
+
+        <div class="text-center my-3">
+            <h1 class="text-base font-bold uppercase tracking-wide">SURAT PERINTAH PERJALANAN DINAS</h1>
+            <h2 class="text-base font-bold uppercase tracking-wide">(SPPD)</h2>
+        </div>
+
+        <table class="table-sppd-depan">
+            <colgroup>
+                <col style="width: 4%;">
+                <col style="width: 44%;">
+                <col style="width: 52%;">
+            </colgroup>
+            <tbody>
+                <tr>
+                    <td class="text-center font-bold">1.</td>
+                    <td>Pejabat yang memberi perintah</td>
+                    <td id="sppd-pejabatPemberi">Kepala Dinas Pendidikan, Kepemudaan dan Olahraga</td>
+                </tr>
+                <tr>
+                    <td class="text-center font-bold">2.</td>
+                    <td>
+                        Nama Pegawai yang diperintahkan<br>
+                        NIP<br>
+                        Pangkat dan Golongan<br>
+                        Jabatan<br><br>
+                        Tingkat Menurut Peraturan Perjalanan Dinas
+                    </td>
+                    <td>
+                        : <strong id="sppd-namaPelaksana" class="uppercase">-</strong><br>
+                        : <span id="sppd-nipPelaksana">-</span><br>
+                        : <span id="sppd-pangkatPelaksana">-</span><br>
+                        : <span id="sppd-jabatanPelaksana">-</span><br><br>
+                        : <span id="sppd-tingkatan">D</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="text-center font-bold">3.</td>
+                    <td>Maksud Perjalanan Dinas</td>
+                    <td class="text-justify">
+                        <div class="flex items-start">
+                            <span class="shrink-0 mr-1.5">:</span>
+                            <span id="sppd-maksudPerdin">-</span>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="text-center font-bold">4.</td>
+                    <td>Alat angkutan yang digunakan</td>
+                    <td>: <span id="sppd-alatAngkut">Kendaraan Dinas / Umum</span></td>
+                </tr>
+                <tr>
+                    <td class="text-center font-bold">5.</td>
+                    <td>
+                        a. Tempat Berangkat<br>
+                        b. Tempat Tujuan
+                    </td>
+                    <td>
+                        : <span id="sppd-tempatBerangkat">Waingapu</span><br>
+                        : <span id="sppd-tempatTujuan">-</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="text-center font-bold">6.</td>
+                    <td>
+                        a. Lamanya Perjalanan Dinas<br>
+                        b. Tanggal Berangkat<br>
+                        c. Tanggal Kembali
+                    </td>
+                    <td>
+                        : <span id="sppd-lamaHari">1</span> Hari<br>
+                        : <span id="sppd-tglMulai">-</span><br>
+                        : <span id="sppd-tglKembali">-</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="text-center font-bold">7.</td>
+                    <td colspan="2">
+                        <div class="mb-1 font-bold">Pengikut :</div>
+                        <div class="flex font-bold text-xs mb-1 border-b pb-0.5">
+					    <span style="width: 45.8%;">Nama</span>
+					    <span style="width: 54.2%; padding-left: 6px;">NIP / Pangkat</span>
+						</div>
+                        <div id="sppd-container-pengikut" class="space-y-1 text-xs"></div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="text-center font-bold">8.</td>
+                    <td>
+                        Pembebanan Anggaran<br>
+                        - Instansi<br>
+                        - Mata Anggaran
+                    </td>
+                    <td class="text-justify">
+                        : APBD Kabupaten Sumba Timur<br>: Dinas Pendidikan, Kepemudaan dan Olahraga<br>
+                        <div class="flex items-start">
+                            <span class="shrink-0 mr-1.5">:</span>
+                            <span>DPA Dinas PKO TA. 2026 <span id="sppd-kodeSK">-</span></span>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="text-center font-bold">9.</td>
+                    <td>Keterangan Lain-lain</td>
+                    <td>:</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="flex justify-end mt-5">
+            <div class="w-72 text-left text-xs leading-normal">
+                <table class="text-xs mb-2">
+                    <tr><td class="pr-2">Dikeluarkan di</td><td>:</td><td class="pl-1" id="sppd-ttd-tempat">Waingapu</td></tr>
+                    <tr><td class="pr-2">Pada Tanggal</td><td>:</td><td class="pl-1" id="sppd-ttd-tgl">-</td></tr>
+                </table>
+                <p class="font-bold" id="sppd-ttd-jabatan">Kepala Dinas Pendidikan, Kepemudaan dan Olahraga</p>
+                <div class="h-16"></div>
+                <p class="font-bold underline uppercase" id="sppd-ttd-nama">-</p>
+                <p id="sppd-ttd-pangkat">-</p>
+                <p>NIP. <span id="sppd-ttd-nip">-</span></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- BAGIAN 3: SPPD BELAKANG ISI -->
+    <div id="bagian-3" class="page sppd-bisi-container">
+        <table class="sppd-bisi-table">
+            <tr>
+                <td class="sppd-bisi-col-half"></td>
+                <td class="sppd-bisi-col-half">
+                    <table class="sppd-bisi-inner-table">
+                        <tr>
+                            <td style="width: 40%; font-size: 9.5pt;">SPPD Nomor</td>
+                            <td style="width: 5%;">:</td>
+                            <td style="width: 55%;"><span id="bisi_noSPPD">-</span></td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 9.5pt;">Berangkat Dari<br><span>(Tempat Kedudukan)</span></td>
+                            <td>:</td>
+                            <td><span id="bisi_tempatBerangkat">Waingapu</span></td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 9.5pt;">Pada Tanggal</td>
+                            <td>:</td>
+                            <td><span id="bisi_tglMulai">-</span></td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 9.5pt;">Ke</td>
+                            <td>:</td>
+                            <td><span id="bisi_tempatTujuan">-</span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" style="font-size: 9.5pt; font-weight: bold; padding-top: 10px; text-align: center;">Selaku Pelaksana Teknis Kegiatan</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+
+            <!-- RUTE I -->
+            <tr>
+                <td class="sppd-bisi-col-half">
+                    <table class="sppd-bisi-inner-table">
+                        <tr><td style="width: 30%;">I. Tiba di</td><td style="width: 5%;">:</td><td style="width: 65%;"><span id="bisi_rute1_tibaDi">-</span></td></tr>
+                        <tr><td style="font-size: 9.5pt;">Pada Tanggal</td><td>:</td><td><span id="bisi_rute1_tglTiba">-</span></td></tr>
+						<tr><td colspan="3"> </td></tr>
+                    </table>
+                    <div class="sppd-bisi-route-signature-box">
+                        <div class="sppd-bisi-route-signature-name">
+                             <span id="bisi_rute1_ttd_nama1"></span> 
+                        </div>
+                    </div>
+                </td>
+                <td class="sppd-bisi-col-half">
+                    <table class="sppd-bisi-inner-table">
+                        <tr><td style="width: 35%;">Berangkat dari</td><td style="width: 5%;">:</td><td style="width: 60%;"><span id="bisi_rute1_berangkatDari">-</span></td></tr>
+                        <tr><td>Ke</td><td>:</td><td><span id="bisi_rute1_ke">-</span></td></tr>
+                        <tr><td>Pada Tanggal</td><td>:</td><td><span id="bisi_rute1_tglBerangkat">-</span></td></tr>
+                    </table>
+                    <div class="sppd-bisi-route-signature-box">
+                        <div class="sppd-bisi-route-signature-name">
+                             <span id="bisi_rute1_ttd_nama2"></span> 
+                        </div>
+                    </div>
+                </td>
+            </tr>
+
+            <!-- RUTE II -->
+            <tr>
+                <td class="sppd-bisi-col-half">
+                    <table class="sppd-bisi-inner-table">
+                        <tr><td style="width: 30%;">II. Tiba di</td><td style="width: 5%;">:</td><td style="width: 65%;"><span id="bisi_rute2_tibaDi"></span></td></tr>
+                        <tr><td style="font-size: 9.5pt;">Pada Tanggal</td><td>:</td><td><span id="bisi_rute2_tglTiba"></span></td></tr>
+						<tr><td colspan="3"> </td></tr>
+                    </table>
+                    <div class="sppd-bisi-route-signature-box">
+                        <div class="sppd-bisi-route-signature-name">
+                             <span id="bisi_rute2_ttd_nama1"></span> 
+                        </div>
+                    </div>
+                </td>
+                <td class="sppd-bisi-col-half">
+                    <table class="sppd-bisi-inner-table">
+                        <tr><td style="width: 35%;">Berangkat dari</td><td style="width: 5%;">:</td><td style="width: 60%;"><span id="bisi_rute2_berangkatDari"></span></td></tr>
+                        <tr><td>Ke</td><td>:</td><td><span id="bisi_rute2_ke"></span></td></tr>
+                        <tr><td>Pada Tanggal</td><td>:</td><td><span id="bisi_rute2_tglBerangkat"></span></td></tr>
+                    </table>
+                    <div class="sppd-bisi-route-signature-box">
+                        <div class="sppd-bisi-route-signature-name">
+                             <span id="bisi_rute2_ttd_nama2"></span> 
+                        </div>
+                    </div>
+                </td>
+            </tr>
+
+            <!-- RUTE III -->
+            <tr>
+                <td class="sppd-bisi-col-half">
+                    <table class="sppd-bisi-inner-table">
+                        <tr><td style="width: 30%;">III. Tiba di</td><td style="width: 5%;">:</td><td style="width: 65%;"><span id="bisi_rute3_tibaDi"></span></td></tr>
+                        <tr><td style="font-size: 9.5pt;">Pada Tanggal</td><td>:</td><td><span id="bisi_rute3_tglTiba"></span></td></tr>
+						<tr><td colspan="3"> </td></tr>
+                    </table>
+                    <div class="sppd-bisi-route-signature-box">
+                        <div class="sppd-bisi-route-signature-name">
+                             <span id="bisi_rute3_ttd_nama1"></span> 
+                        </div>
+                    </div>
+                </td>
+                <td class="sppd-bisi-col-half">
+                    <table class="sppd-bisi-inner-table">
+                        <tr><td style="width: 35%;">Berangkat dari</td><td style="width: 5%;">:</td><td style="width: 60%;"><span id="bisi_rute3_berangkatDari"></span></td></tr>
+                        <tr><td>Ke</td><td>:</td><td><span id="bisi_rute3_ke"></span></td></tr>
+                        <tr><td>Pada Tanggal</td><td>:</td><td><span id="bisi_rute3_tglBerangkat"></span></td></tr>
+                    </table>
+                    <div class="sppd-bisi-route-signature-box">
+                        <div class="sppd-bisi-route-signature-name">
+                             <span id="bisi_rute3_ttd_nama2"></span> 
+                        </div>
+                    </div>
+                </td>
+            </tr>
+
+            <!-- PENGESAHAN KEMBALI IV -->
+            <tr>
+                <td class="sppd-bisi-col-half"></td>
+                <td class="sppd-bisi-col-half" style="padding: 6px 8px;">
+                    <table class="sppd-bisi-inner-table">
+                        <tr><td style="width: 45%;">IV. Tiba Kembali di</td><td style="width: 5%;">:</td><td style="width: 50%;"><span id="bisi_tibaKembaliDi">Waingapu</span></td></tr>
+                        <tr><td>Pada Tanggal</td><td>:</td><td><span id="bisi_tglKembali">-</span></td></tr>
+                    </table>
+                    <p style="margin-top: 6px; margin-bottom: 6px; text-align: justify;">
+                        Telah diperiksa dengan keterangan bahwa perjalanan dinas tersebut di atas benar dilakukan atas perintahnya dan semata-mata untuk kepentingan jabatan dalam waktu yang sesingkat-singkatnya.
+                    </p>
+                    <div class="sppd-bisi-signature-sec">
+                        <div class="sppd-bisi-signature-title">
+                            <span id="bisi_pengesahan_jabatan">Kepala Dinas Pendidikan, Kepemudaan dan Olahraga,</span>
+                        </div>
+                        <div><span class="sppd-bisi-signature-name" id="bisi_pengesahan_nama">-</span></div>
+                        <div><span id="bisi_pengesahan_pangkat">-</span><br>NIP. <span id="bisi_pengesahan_nip">-</span></div>
+                    </div>
+                </td>
+            </tr>
+
+            <tr>
+                <td colspan="2" class="sppd-bisi-catatan-box">
+                    <span style="font-weight: bold;">Catatan Lain-lain :</span>
+                    <div id="bisi_catatanLain" style="font-size: 9pt; padding-top: 3px;"></div>
+                </td>
+            </tr>
+
+            <tr>
+                <td colspan="2" class="sppd-bisi-perhatian-cell">
+                    <span class="sppd-bisi-perhatian-title">PERHATIAN:</span> Pejabat yang berwenang menerbitkan SPPD Pegawai yang melakukan perjalanan dinas para pejabat yang mengesahkan tanggal berangkat/tiba serta bendaharawan bertanggungjawab berdasarkan peraturan-peraturan keuangan negara apabila negara mendapat rugi akibat kesalahan, kealpaannya.
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- BAGIAN 4: LAPORAN HASIL PERJALANAN DINAS -->
+    <div id="bagian-4" class="page">
+        <div class="flex items-center justify-between border-kop-double pb-2 mb-4">
+            <img src="https://offeebouiohweqlgyccx.supabase.co/storage/v1/object/public/image/logo_st.png" alt="Logo ST" class="h-20 w-auto object-contain">
+            <div class="text-center flex-1 px-2">
+                <h3 class="text-base font-bold uppercase tracking-wider">PEMERINTAH KABUPATEN SUMBA TIMUR</h3>
+                <h2 class="text-lg font-extrabold uppercase tracking-wide">DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA</h2>
+                <p class="text-xs italic">Jl. Jenderal Soeharto No. 50, Hambala, Kec. Kota Waingapu, Sumba Timur</p>
+                <p class="text-xs italic">Telepon: (0387) 61213 | Email: dikpora.sumbatimur@gmail.com</p>
+            </div>
+        </div>
+
+        <div class="text-center my-4">
+            <h1 class="text-base font-bold underline uppercase tracking-wide">LAPORAN HASIL PERJALANAN DINAS</h1>
+        </div>
+
+        <table class="content-table mb-4">
+            <tr>
+                <td class="col-label pb-4 pt-1">1. Dasar Pelaksanaan</td>
+                <td class="col-colon pb-4 pt-1">:</td>
+                <td id="lap-dasarST" class="pb-4 pt-1">-</td>
+            </tr>
+            <tr>
+                <td class="col-label pb-4 pt-1">2. Maksud / Tujuan</td>
+                <td class="col-colon pb-4 pt-1">:</td>
+                <td id="lap-maksudPerdin" class="pb-4 pt-1">-</td>
+            </tr>
+            <tr>
+                <td class="col-label pb-4 pt-1">3. Waktu Pelaksanaan</td>
+                <td class="col-colon pb-4 pt-1">:</td>
+                <td id="lap-waktuPelaksanaan" class="pb-4 pt-1">-</td>
+            </tr>
+            <tr>
+                <td class="col-label pb-4 pt-1">4. Daerah Tujuan</td>
+                <td class="col-colon pb-4 pt-1">:</td>
+                <td id="lap-daerahTujuan" class="pb-4 pt-1">-</td>
+            </tr>
+            <tr>
+                <td class="col-label pb-4 pt-1">5. Pelaksana Tugas</td>
+                <td class="col-colon pb-4 pt-1">:</td>
+                <td id="lap-container-pelaksana" class="pb-4 pt-1"></td>
+            </tr>
+        </table>
+
+        <div class="mb-4 text-xs leading-relaxed">
+            <p class="font-bold uppercase mb-2">6. Hasil Yang Dicapai / Laporan Ringkas :</p>
+            <div id="lap-isiHasil" class="p-3 border border-slate-300 rounded text-justify whitespace-pre-line bg-slate-50/50">-</div>
+        </div>
+
+        <div class="text-xs mb-6">
+            <p>Demikian laporan hasil perjalanan dinas ini dibuat untuk dapat dipergunakan sebagaimana mestinya.</p>
+        </div>
+
+        <div class="mt-8 text-xs leading-normal">
+            <table class="mb-4">
+                <tr><td class="pr-2">Dikeluarkan di</td><td>:</td><td class="pl-1" id="lap-ttd-tempat">Waingapu</td></tr>
+                <tr><td class="pr-2">Pada Tanggal</td><td>:</td><td class="pl-1" id="lap-ttd-tgl">-</td></tr>
+            </table>
+            
+            <table class="w-full text-xs mt-4">
+                <thead>
+                    <tr>
+                        <th class="text-left font-bold w-[60%] pb-3">Yang Melakukan Perjalanan Dinas</th>
+                        <th class="text-left font-bold w-[40%] pb-3 pl-4">Tanda Tangan</th>
+                    </tr>
+                </thead>
+                <tbody id="lap-signature-list"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- BAGIAN 5: KWITANSI -->
+    <div id="bagian-5" class="page">
+        <div class="flex items-center justify-between border-kop-double pb-2 mb-4">
+            <img src="https://offeebouiohweqlgyccx.supabase.co/storage/v1/object/public/image/logo_st.png" alt="Logo ST" class="h-20 w-auto object-contain">
+            <div class="text-center flex-1 px-2">
+                <h3 class="text-base font-bold uppercase tracking-wider">PEMERINTAH KABUPATEN SUMBA TIMUR</h3>
+                <h2 class="text-lg font-extrabold uppercase tracking-wide">DINAS PENDIDIKAN, KEPEMUDAAN DAN OLAHRAGA</h2>
+                <p class="text-xs italic">Jl. Jenderal Soeharto No. 50, Hambala, Kec. Kota Waingapu, Sumba Timur</p>
+                <p class="text-xs italic">Telepon: (0387) 61213 | Email: dikpora.sumbatimur@gmail.com</p>
+            </div>
+	</div>
+	
+	<div class="flex justify-end text-xs mb-2">
+            <table class="text-xs text-left">
+                <tr><td class="pr-2 py-0.5">No. BKU</td><td>:</td><td class="pl-1">..............................</td></tr>
+                <tr><td class="pr-2 py-0.5">Tahun</td><td>:</td><td class="pl-1">2026</td></tr>
+                <tr><td class="pr-2 py-0.5">Tanggal</td><td>:</td><td class="pl-1" id="kwitansi-bku-tgl">-</td></tr>
+            </table>
+	</div>
+        <h6 class="text-center font-bold text-lg mb-3 uppercase underline">K W I T A N S I</h6>
+        
+        <table class="w-full text-xs space-y-1">
+            <tr>
+                <td class="w-28">Sudah Terima Dari</td>
+                <td class="w-2">:</td>
+                <td>Pengguna Anggaran Dinas Pendidikan, Kepemudaan dan Olahraga</td>
+            </tr>
+            <tr>
+                <td>Uang Sejumlah</td>
+                <td>:</td>
+                <td id="lap-uang-sejumlah" class="font-bold">Rp. 0</td>
+            </tr>
+            <tr>
+                <td>Untuk Keperluan</td>
+                <td>:</td>
+                <td id="lap-tgl">01 Januari 2026</td>
+            </tr>
+            <tr>
+                <td style="padding-bottom: 20px;">Terbilang</td>
+                <td style="padding-bottom: 20px;">:</td>
+                <td id="lap-terbilang" style="padding-bottom: 20px;" class="font-bold italic capitalize">Nol Rupiah</td>
+            </tr>
+        </table>
+
+        <div class="text-xs capitalize mb-1">Dengan Rincian Sebagai Berikut :</div>
+
+        <table class="table-f4">
+            <colgroup>
+                <col class="w-7"><col class="w-7"><col class="w-7"><col class="w-7"><col class="w-8">
+                <col class="w-77"><col class="w-8"><col class="w-8"><col class="w-12"><col class="w-23"><col class="w-25">
+            </colgroup>
+            <tbody>
+                <tr>
+                    <td colspan="5" rowspan="2" class="text-center font-bold text-xs uppercase px-1">Kode Rekening</td>
+                    <td rowspan="2" class="text-center font-bold text-xs uppercase px-1">Uraian</td>
+                    <td colspan="3" class="text-center font-bold text-xs uppercase px-1">Rincian Perhitungan</td>
+                    <td rowspan="2" class="text-center font-bold text-xs uppercase px-1">Jumlah<br>(Rp.)</td>
+                    <td rowspan="2" class="text-center font-bold text-xs uppercase px-1">Tanda<br>tangan</td>
+                </tr>	
+                <tr>
+                    <td class="text-center font-bold text-xs uppercase px-1">Vol.</td>
+                    <td class="text-center font-bold text-xs uppercase px-1">Sat.</td>
+                    <td class="text-center font-bold text-xs uppercase px-1">Harga<br>Satuan<br>(Rp.)</td>
+                </tr>
+                <tr>
+                    <td>5.1</td><td>02</td><td colspan="3"></td>
+                    <td colspan="5" class="!text-left font-bold text-xs uppercase !px-1.5">Belanja Barang dan Jasa</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>5.1</td><td>02</td><td>04</td><td colspan="2"></td>
+                    <td colspan="4" class="!text-left font-bold text-xs uppercase !px-1.5">Belanja Perjalanan Dinas</td>
+                    <td id="cell-d11" class="!text-right font-bold text-xs uppercase px-1">0</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>5.1</td><td>02</td><td>04</td><td>001</td><td></td>
+                    <td colspan="4" class="!text-left font-bold text-xs uppercase !px-1.5">Belanja Perjalanan Dinas Dalam Negeri</td>
+                    <td id="cell-e11" class="!text-right font-bold text-xs uppercase px-1">0</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>5.1</td><td>02</td><td>04</td><td>001</td><td>0001</td>
+                    <td colspan="4" class="!text-left font-bold text-xs uppercase !px-1.5">Belanja Perjalanan Dinas Biasa</td>
+                    <td id="cell-f11" class="!text-right font-bold text-xs uppercase px-1">0</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td colspan="5"></td>
+                    <td colspan="5" class="!text-justify !py-1 !px-1.5" id="kwitansi-maksudTujuan">
+                        Sehubungan dengan pelaksanaan Perjalanan Dinas pada Dinas Pendidikan, Kepemudaan dan Olahraga Kabupaten Sumba Timur Tahun Anggaran 2026.
+                    </td>
+                    <td></td>
+                </tr>
+                <tr class="row-dynamic">
+                    <td colspan="5"></td>
+                    <td class="!text-left !align-top px-1.5"><div id="container-l6" class="flex flex-col space-y-1.5"></div></td>
+                    <td class="!align-top"><div id="container-l7" class="flex flex-col space-y-1.5"></div></td>
+                    <td class="!align-top"><div id="container-l8" class="flex flex-col space-y-1.5"></div></td>
+                    <td class="!align-top"><div id="container-l9" class="flex flex-col space-y-1.5"></div></td>
+                    <td class="!align-top !text-right px-1"><div id="container-l10" class="flex flex-col space-y-1.5"></div></td>
+                    <td class="!text-left !align-top px-1"><div id="container-l11" class="flex flex-col space-y-1.5"></div></td>
+                </tr>	
+                <tr>
+                    <td colspan="9" class="!text-right font-bold text-xs uppercase px-1">Jumlah diterima :</td>
+                    <td id="cell-k10" class="!text-right font-bold text-xs uppercase px-1">0</td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="flex justify-between items-start text-xs mt-8 w-[190mm] mx-auto text-center">
+            <div class="w-64">
+                <p>Mengetahui,</p>
+                <p class="font-bold">Pengguna Anggaran</p>
+                <div class="h-16"></div>
+                <p class="font-bold underline uppercase" id="kwitansi-pa-nama">-</p>
+                <p>NIP. <span id="kwitansi-pa-nip">-</span></p>
+            </div>
+            <div class="w-64">
+                <p> </p>
+                <p class="font-bold">Bendahara Pengeluaran</p>
+                <div class="h-16"></div>
+                <p class="font-bold underline uppercase" id="kwitansi-bendahara-nama">-</p>
+                <p>NIP. <span id="kwitansi-bendahara-nip">-</span></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT LOGIKA CETAK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/db.js"></script>
+    <script>
+		function updateNetworkBadge() {
+			const badge = document.getElementById('networkBadge');
+			if (!badge) return;
+			if (navigator.onLine) {
+			    badge.className = 'px-2.5 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 bg-emerald-600 text-white shadow-sm';
+			    badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-white animate-pulse"></span> Online`;
+			} else {
+			    badge.className = 'px-2.5 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 bg-amber-600 text-white shadow-sm';
+			    badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-white"></span> Offline`;
+			}
+		}
+		window.addEventListener('online', updateNetworkBadge);
+		window.addEventListener('offline', updateNetworkBadge);
+		document.addEventListener('DOMContentLoaded', updateNetworkBadge);
+				
+		function terbilangIndonesia(angka) {
+            angka = Math.floor(Math.abs(angka));
+            const huruf = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas"];
+            let hasil = "";
+            if (angka < 12) hasil = huruf[angka];
+            else if (angka < 20) hasil = terbilangIndonesia(angka - 10) + " Belas";
+            else if (angka < 100) hasil = terbilangIndonesia(Math.floor(angka / 10)) + " Puluh " + terbilangIndonesia(angka % 10);
+            else if (angka < 200) hasil = "Seratus " + terbilangIndonesia(angka - 100);
+            else if (angka < 1000) hasil = terbilangIndonesia(Math.floor(angka / 100)) + " Ratus " + terbilangIndonesia(angka % 100);
+            else if (angka < 2000) hasil = "Seribu " + terbilangIndonesia(angka - 1000);
+            else if (angka < 1000000) hasil = terbilangIndonesia(Math.floor(angka / 1000)) + " Ribu " + terbilangIndonesia(angka % 1000);
+            else if (angka < 1000000000) hasil = terbilangIndonesia(Math.floor(angka / 1000000)) + " Juta " + terbilangIndonesia(angka % 1000000);
+            return hasil.replace(/\s+/g, ' ').trim();
+        }
+
+		function formatTanggalIndo(dateString) {
+		    if (!dateString || dateString === '-') return '-';
+		    const d = new Date(dateString);
+		    if (isNaN(d.getTime())) return dateString;
+		    const bulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+		    return `${d.getDate()} ${bulan[d.getMonth()]} ${d.getFullYear()}`;
+		}
+		
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const recordId = urlParams.get('id');
+
+            let recordData = null;
+            if (window.AppDB) {
+                const allRecords = await window.AppDB.getAllRecords();
+                if (recordId) {
+                    recordData = allRecords.find(r => r.id == recordId);
+                }
+                if (!recordData && allRecords.length > 0) {
+                    recordData = allRecords[0];
+                }
+            }
+
+            if (!recordData) {
+                console.warn("Data riwayat tidak ditemukan.");
+                return;
+            }
+
+            let skList = [];
+            if (window.AppDB) skList = await window.AppDB.getMasterSK();
+            const matchedSK = skList.find(s => s.kode === recordData.kodeSK);
+            const namaSubKegiatan = matchedSK ? matchedSK.nama : "-";
+
+            const maksudDinamis = recordData.maksudPerdin || '-';
+            const pangkatDinamis = recordData.pangkatPelaksana || '-';
+
+            // 1. SURAT TUGAS
+            if(document.getElementById('st-noSuratTugas')) {
+                document.getElementById('st-noSuratTugas').textContent = recordData.noSuratTugas || '-';
+                document.getElementById('st-kodeSK').textContent = recordData.kodeSK || '-';
+                document.getElementById('st-namaSK').textContent = namaSubKegiatan;
+                document.getElementById('st-maksudPerdin').textContent = maksudDinamis;
+                document.getElementById('st-tglDikeluarkan').textContent = formatTanggalIndo(recordData.tglMulai) || '-';
+                document.getElementById('st-tempatDikeluarkan').textContent = recordData.tempatBerangkat || 'Waingapu';
+                
+                document.getElementById('st-ttd-nama').textContent = recordData.namaKadis || 'NAMA KEPALA DINAS, S.Pd., M.Si.';
+                document.getElementById('st-ttd-nip').textContent = recordData.nipKadis || '196801011988031012';
+                document.getElementById('st-ttd-pangkat').textContent = recordData.pangkatKadis || 'Pembina Utama Muda';
+
+                const timLengkap = [{
+                    nama: recordData.namaPelaksana ? recordData.namaPelaksana.toUpperCase() : '-',
+                    nip: recordData.nipPelaksana || '-',
+                    pangkat: pangkatDinamis,
+                    jabatan: recordData.jabatanPelaksana || '-'
+                }];
+
+                if (Array.isArray(recordData.pengikut)) {
+                    recordData.pengikut.forEach(p => {
+                        if (p) {
+                            const namaP = p.nama || p.namaPengikut || p.namaAsn;
+                            if (namaP && namaP.trim() !== '') {
+                                timLengkap.push({
+                                    nama: namaP.toUpperCase(),
+                                    nip: p.nip || '-',
+                                    pangkat: p.pangkat || p.golongan || '-',
+                                    jabatan: p.jabatan || '-'
+                                });
+                            }
+                        }
+                    });
+                }
+
+                const pegContainer = document.getElementById('st-container-pegawai');
+                pegContainer.innerHTML = '';
+                timLengkap.forEach((peg, i) => {
+                    pegContainer.innerHTML += `
+                        <table class="content-table pegawai-item">
+                            <tr>
+                                <td class="pegawai-num">${i + 1})</td>
+                                <td class="sub-label">Nama</td>
+                                <td class="col-colon">:</td>
+                                <td><strong>${peg.nama}</strong></td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td class="sub-label">NIP.</td>
+                                <td class="col-colon">:</td>
+                                <td>${peg.nip}</td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td class="sub-label">Pangkat / Golongan</td>
+                                <td class="col-colon">:</td>
+                                <td>${peg.pangkat}</td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td class="sub-label">Jabatan</td>
+                                <td class="col-colon">:</td>
+                                <td>${peg.jabatan}</td>
+                            </tr>
+                        </table>
+                    `;
+                });
+            }
+
+            // 2. SPPD DEPAN
+            if(document.getElementById('sppd-noSPPD')) {
+                document.getElementById('sppd-noSPPD').textContent = recordData.noSPPD || '-';
+                document.getElementById('sppd-namaPelaksana').textContent = recordData.namaPelaksana ? recordData.namaPelaksana.toUpperCase() : '-';
+                document.getElementById('sppd-nipPelaksana').textContent = recordData.nipPelaksana || '-';
+                document.getElementById('sppd-pangkatPelaksana').textContent = pangkatDinamis;
+                document.getElementById('sppd-jabatanPelaksana').textContent = recordData.jabatanPelaksana || '-';
+                document.getElementById('sppd-maksudPerdin').textContent = maksudDinamis;
+                document.getElementById('sppd-alatAngkut').textContent = recordData.alatAngkutan || 'Kendaraan Dinas / Umum';
+                document.getElementById('sppd-tempatBerangkat').textContent = recordData.tempatBerangkat || 'Waingapu';
+                document.getElementById('sppd-tempatTujuan').textContent = recordData.tempatTujuan || '-';
+                document.getElementById('sppd-lamaHari').textContent = recordData.lamaHari || 1;
+                document.getElementById('sppd-tglMulai').textContent = formatTanggalIndo(recordData.tglMulai) || '-';
+                document.getElementById('sppd-tglKembali').textContent = formatTanggalIndo(recordData.tglKembali || recordData.tglMulai) || '-';
+                document.getElementById('sppd-kodeSK').textContent = recordData.kodeSK || '-';
+                document.getElementById('sppd-ttd-tgl').textContent = formatTanggalIndo(recordData.tglMulai) || '-';
+
+                document.getElementById('sppd-ttd-nama').textContent = recordData.namaKadis || 'NAMA KEPALA DINAS, S.Pd., M.Si.';
+                document.getElementById('sppd-ttd-nip').textContent = recordData.nipKadis || '196801011988031012';
+                document.getElementById('sppd-ttd-pangkat').textContent = recordData.pangkatKadis || 'Pembina Utama Muda';
+
+                const pengikutContainer = document.getElementById('sppd-container-pengikut');
+                pengikutContainer.innerHTML = '';
+                if (Array.isArray(recordData.pengikut) && recordData.pengikut.length > 0) {
+                    let hasPengikut = false;
+                    recordData.pengikut.forEach((p, idx) => {
+                        const namaP = p ? (p.nama || p.namaPengikut || p.namaAsn) : null;
+                        if (namaP) {
+                            hasPengikut = true;
+                            const nipP = p.nip || '-';
+                            const pangkatP = p.pangkat || p.golongan || '-';
+                            pengikutContainer.innerHTML += `
+					            <div class="flex text-xs py-0.5 border-b border-slate-100">
+					                <span style="width: 45.8%;" class="uppercase font-medium">${idx + 1}. ${namaP}</span>
+					                <span style="width: 54.2%; padding-left: 6px;">${nipP}${pangkatP !== '-' ? ' (' + pangkatP + ')' : ''}</span>
+					            </div>
+					        `;
+                        }
+                    });
+                    if (!hasPengikut) pengikutContainer.innerHTML = '<div class="italic text-slate-400 text-xs">- Tidak ada pengikut -</div>';
+                } else {
+                    pengikutContainer.innerHTML = '<div class="italic text-slate-400 text-xs">- Tidak ada pengikut -</div>';
+                }
+            }
+
+            // 3. SPPD BELAKANG
+            populateSPPDBelakangIsi(recordData);
+
+            // 4. LAPORAN
+            populateLaporanHasil(recordData, maksudDinamis);
+
+            // 5. KWITANSI
+			if (document.getElementById('kwitansi-bku-tgl')) {
+                document.getElementById('kwitansi-bku-tgl').textContent = recordData.tglKembali ? formatTanggalIndo(recordData.tglKembali) : '-';
+        	}
+			if(document.getElementById('kwitansi-pa-nama')) {
+			    document.getElementById('kwitansi-pa-nama').textContent = recordData.namaKadis || 'NAMA KEPALA DINAS, S.Pd., M.Si.';
+			    document.getElementById('kwitansi-pa-nip').textContent = recordData.nipKadis || '196801011988031012';
+			}
+			if(document.getElementById('kwitansi-bendahara-nama')) {
+			    document.getElementById('kwitansi-bendahara-nama').textContent = recordData.namaBendahara || '-';
+			}
+			if(document.getElementById('kwitansi-bendahara-nip')) {
+			    document.getElementById('kwitansi-bendahara-nip').textContent = recordData.nipBendahara || '-';
+			}
+
+			const timKwitansi = [{
+                nama: `1. ${recordData.namaPelaksana ? recordData.namaPelaksana.toUpperCase() : '-'}`,
+                vol: parseInt(recordData.lamaHari) || 1,
+                harga: parseInt(recordData.biayaPerOrang) || 170000
+            }];
+
+            if (Array.isArray(recordData.pengikut)) {
+                recordData.pengikut.forEach((p, idx) => {
+                    const namaP = p ? (p.nama || p.namaPengikut || p.namaAsn) : null;
+                    if (namaP) {
+                        timKwitansi.push({
+                            nama: `${idx + 2}. ${namaP.toUpperCase()}`,
+                            vol: parseInt(recordData.lamaHari) || 1,
+                            harga: parseInt(recordData.biayaPerOrang) || 170000
+                        });
+                    }
+                });
+            }
+
+            if(document.getElementById('kwitansi-maksudTujuan')) {
+                document.getElementById('kwitansi-maksudTujuan').textContent = `Sehubungan dengan pelaksanaan Perjalanan Dinas ${maksudDinamis} di ${recordData.tempatTujuan || '-'} pada Tanggal ${recordData.tglMulai || '-'}.`;
+            }
+            if(document.getElementById('lap-tgl')) {
+                document.getElementById('lap-tgl').textContent = `Pembayaran Perjalanan Dinas Ke ${recordData.tempatTujuan || '-'} Tgl ${recordData.tglMulai || '-'}`;
+            }
+
+            renderRincianTabel(timKwitansi);
+        });
+
+        function populateSPPDBelakangIsi(recordData) {
+            if (!recordData) return;
+            const defaultDots = "";
+
+			if (document.getElementById('bisi_noSPPD')) document.getElementById('bisi_noSPPD').textContent = recordData.noSPPD || '-';
+            if (document.getElementById('bisi_tempatBerangkat')) document.getElementById('bisi_tempatBerangkat').textContent = recordData.tempatBerangkat || 'Waingapu';
+			if (document.getElementById('bisi_tglMulai')) document.getElementById('bisi_tglMulai').textContent = recordData.tglMulai ? formatTanggalIndo(recordData.tglMulai) : '-';
+			if (document.getElementById('bisi_tempatTujuan')) document.getElementById('bisi_tempatTujuan').textContent = recordData.tempatTujuan || '-';
+
+			const tempatBerangkat = recordData.tempatBerangkat || 'Waingapu';
+			const tujuan1 = recordData.tempatTujuan || '-';
+			const tglMulai = recordData.tglMulai ? formatTanggalIndo(recordData.tglMulai) : '-';
+			const tglKembali = recordData.tglKembali ? formatTanggalIndo(recordData.tglKembali) : tglMulai;
+            const pejabatTujuan1 = recordData.namaPejabatTujuan ? recordData.namaPejabatTujuan.toUpperCase() : defaultDots;
+
+            if (document.getElementById('bisi_rute1_tibaDi')) document.getElementById('bisi_rute1_tibaDi').textContent = tujuan1;
+            if (document.getElementById('bisi_rute1_tglTiba')) document.getElementById('bisi_rute1_tglTiba').textContent = tglMulai;
+            if (document.getElementById('bisi_rute1_ttd_nama1')) document.getElementById('bisi_rute1_ttd_nama1').textContent = pejabatTujuan1;
+
+            const keRute1 = recordData.tempatTujuan2 && recordData.tempatTujuan2.trim() !== '' ? recordData.tempatTujuan2 : tempatBerangkat;
+            const tglBerangkat1 = recordData.tglBerangkat2 && recordData.tglBerangkat2.trim() !== '' ? formatTanggalIndo(recordData.tglBerangkat2) : tglKembali;
+
+            if (document.getElementById('bisi_rute1_berangkatDari')) document.getElementById('bisi_rute1_berangkatDari').textContent = tujuan1;
+            if (document.getElementById('bisi_rute1_ke')) document.getElementById('bisi_rute1_ke').textContent = keRute1;
+            if (document.getElementById('bisi_rute1_tglBerangkat')) document.getElementById('bisi_rute1_tglBerangkat').textContent = tglBerangkat1;
+            if (document.getElementById('bisi_rute1_ttd_nama2')) document.getElementById('bisi_rute1_ttd_nama2').textContent = pejabatTujuan1;
+
+            if (document.getElementById('bisi_tibaKembaliDi')) document.getElementById('bisi_tibaKembaliDi').textContent = tempatBerangkat;
+            if (document.getElementById('bisi_tglKembali')) document.getElementById('bisi_tglKembali').textContent = tglKembali;
+            if (document.getElementById('bisi_pengesahan_nama')) document.getElementById('bisi_pengesahan_nama').textContent = recordData.namaKadis || '-';
+            if (document.getElementById('bisi_pengesahan_nip')) document.getElementById('bisi_pengesahan_nip').textContent = recordData.nipKadis || '-';
+            if (document.getElementById('bisi_pengesahan_pangkat')) document.getElementById('bisi_pengesahan_pangkat').textContent = recordData.pangkatKadis || '-';
+        }
+
+	    function populateLaporanHasil(recordData, maksudPerdinText) {
+            if (!recordData) return;
+
+            if (document.getElementById('lap-dasarST')) document.getElementById('lap-dasarST').textContent = `Surat Tugas Nomor: ${recordData.noSuratTugas || '-'}`;
+            if (document.getElementById('lap-maksudPerdin')) document.getElementById('lap-maksudPerdin').textContent = maksudPerdinText || '-';
+            if (document.getElementById('lap-waktuPelaksanaan')) {
+			    const fmtMulai = recordData.tglMulai ? formatTanggalIndo(recordData.tglMulai) : '-';
+			    const fmtKembali = recordData.tglKembali ? formatTanggalIndo(recordData.tglKembali) : fmtMulai;
+			    document.getElementById('lap-waktuPelaksanaan').textContent = `${fmtMulai} s/d ${fmtKembali} (${recordData.lamaHari || 1} Hari)`;
+			}
+            if (document.getElementById('lap-daerahTujuan')) {
+                let lokasiTujuanSemua = recordData.tempatTujuan || '-';
+                if (recordData.tempatTujuan2) lokasiTujuanSemua += `, ${recordData.tempatTujuan2}`;
+                if (recordData.tempatTujuan3) lokasiTujuanSemua += `, ${recordData.tempatTujuan3}`;
+                document.getElementById('lap-daerahTujuan').textContent = lokasiTujuanSemua;
+            }
+
+            const containerPelaksana = document.getElementById('lap-container-pelaksana');
+            if (containerPelaksana) {
+                containerPelaksana.innerHTML = '';
+                let htmlPeg = `<div class="font-bold">1. ${recordData.namaPelaksana ? recordData.namaPelaksana.toUpperCase() : '-'} (NIP. ${recordData.nipPelaksana || '-'})</div>`;
+                if (Array.isArray(recordData.pengikut) && recordData.pengikut.length > 0) {
+                    recordData.pengikut.forEach((p, idx) => {
+                        const namaP = p ? (p.nama || p.namaPengikut || p.namaAsn) : null;
+                        if (namaP) {
+                            htmlPeg += `<div class="mt-0.5">${idx + 2}. ${namaP.toUpperCase()} (NIP. ${p.nip || '-'})</div>`;
+                        }
+                    });
+                }
+                containerPelaksana.innerHTML = htmlPeg;
+            }
+
+            if (document.getElementById('lap-isiHasil')) {
+                document.getElementById('lap-isiHasil').textContent = recordData.laporanHasil && recordData.laporanHasil.trim() !== '' 
+                    ? recordData.laporanHasil 
+                    : "Pelaksanaan Perjalanan Dinas telah dilaksanakan sesuai jadwal dan maksud tujuan yang ditetapkan. Seluruh agenda kegiatan kedinasan berjalan dengan lancar tanpa hambatan.";
+            }
+
+            if (document.getElementById('lap-ttd-tempat')) document.getElementById('lap-ttd-tempat').textContent = recordData.tempatBerangkat || 'Waingapu';
+            if (document.getElementById('lap-ttd-tgl')) {
+			    const fmtKembaliTTD = recordData.tglKembali ? formatTanggalIndo(recordData.tglKembali) : (recordData.tglMulai ? formatTanggalIndo(recordData.tglMulai) : '-');
+			    document.getElementById('lap-ttd-tgl').textContent = fmtKembaliTTD;
+			}
+
+			const sigContainer = document.getElementById('lap-signature-list');
+		    if (sigContainer) {
+		        sigContainer.innerHTML = '';
+		        let htmlSig = `
+		            <tr>
+		                <td class="py-2.5 align-top">
+		                    <span class="inline-block w-4">1.</span> 
+		                    <span class="uppercase font-bold">${recordData.namaPelaksana ? recordData.namaPelaksana.toUpperCase() : '-'}</span><br>
+		                    <span class="inline-block w-4"></span> 
+		                    <span>NIP. ${recordData.nipPelaksana || '-'}</span>
+		                </td>
+		                <td class="py-2.5 align-top pl-4">1. ........................................</td>
+		            </tr>
+		        `;
+		        if (Array.isArray(recordData.pengikut) && recordData.pengikut.length > 0) {
+		            recordData.pengikut.forEach((p, idx) => {
+		                const namaP = p ? (p.nama || p.namaPengikut || p.namaAsn) : null;
+		                if (namaP) {
+		                    const num = idx + 2;
+		                    htmlSig += `
+		                        <tr>
+		                            <td class="py-2.5 align-top">
+		                                <span class="inline-block w-4">${num}.</span> 
+		                                <span class="uppercase font-bold">${namaP.toUpperCase()}</span><br>
+		                                <span class="inline-block w-4"></span> 
+		                                <span>NIP. ${p.nip || '-'}</span>
+		                            </td>
+		                            <td class="py-2.5 align-top pl-4">${num}. ........................................</td>
+		                        </tr>
+		                    `;
+		                }
+		            });
+		        }
+		        sigContainer.innerHTML = htmlSig;
+		    }
+		}
+		
+		function renderRincianTabel(data) {
+            const cL6 = document.getElementById("container-l6");
+            const cL7 = document.getElementById("container-l7");
+            const cL8 = document.getElementById("container-l8");
+            const cL9 = document.getElementById("container-l9");
+            const cL10 = document.getElementById("container-l10");
+            const cL11 = document.getElementById("container-l11");
+
+            if(!cL6) return;
+            cL6.innerHTML = ""; cL7.innerHTML = ""; cL8.innerHTML = ""; cL9.innerHTML = ""; cL10.innerHTML = ""; cL11.innerHTML = "";
+
+            let totalDiterima = 0;
+            data.forEach((item, index) => {
+                const jumlahRp = item.vol * item.harga;
+                totalDiterima += jumlahRp;
+
+                cL6.innerHTML += `<div class="h-6 flex items-end">${item.nama}</div>`;
+                cL7.innerHTML += `<div class="h-6 flex items-end justify-center">${item.vol}</div>`;
+                cL8.innerHTML += `<div class="h-6 flex items-end justify-center">OH</div>`;
+                cL9.innerHTML += `<div class="h-6 flex items-end justify-center">${item.harga.toLocaleString('id-ID')}</div>`;
+                cL10.innerHTML += `<div class="h-6 flex items-end justify-end">${jumlahRp.toLocaleString('id-ID')}</div>`;
+                cL11.innerHTML += `
+                    <div class="flex items-end w-full h-6">
+                        <span class="shrink-0 pr-1">${index + 1}.</span>
+                        <span class="grow spaced-dots h-3"></span>
+                    </div>
+                `;
+            });
+
+            const formattedTotal = totalDiterima.toLocaleString('id-ID');
+            document.getElementById("cell-k10").textContent = formattedTotal;
+            document.getElementById("cell-f11").textContent = formattedTotal;
+            document.getElementById("cell-e11").textContent = formattedTotal;
+            document.getElementById("cell-d11").textContent = formattedTotal;
+            document.getElementById("lap-uang-sejumlah").textContent = "Rp. " + formattedTotal;
+
+            const teksTerbilang = totalDiterima > 0 ? terbilangIndonesia(totalDiterima) + " Rupiah" : "Nol Rupiah";
+            document.getElementById("lap-terbilang").textContent = teksTerbilang;
+        }
+    </script>
+</body>
+</html>
