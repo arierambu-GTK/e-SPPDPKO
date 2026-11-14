@@ -391,7 +391,7 @@ function formatRupiahRP(angka) {
 }
 
 function openCetakPage(id) {
-    window.location.href = `cetak_dpko.html.html?id=${id}`;
+    window.location.href = `cetak_dpko.html?id=${id}`;
 }
 
 function renderHistoryTable() {
