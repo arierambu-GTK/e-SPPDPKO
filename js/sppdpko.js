@@ -570,6 +570,28 @@ async function deleteAsnMaster(nip) {
     }
 }
 
+/**
+ * Helper Parser CSV yang aman terhadap koma di dalam tanda kutip (quotes)
+ */
+function parseCSVLine(text) {
+    const result = [];
+    let entry = '';
+    let inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        if (char === '"') {
+            inQuotes = !inQuotes;
+        } else if ((char === ',' || char === ';') && !inQuotes) {
+            result.push(entry.trim().replace(/^"|"$/g, ''));
+            entry = '';
+        } else {
+            entry += char;
+        }
+    }
+    result.push(entry.trim().replace(/^"|"$/g, ''));
+    return result;
+}
+
 async function importAsnFromCsv() {
     const fileInput = document.getElementById('csvFileInput');
     if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
@@ -582,25 +604,67 @@ async function importAsnFromCsv() {
 
     reader.onload = async function(e) {
         const text = e.target.result;
-        const lines = text.split(/\r\n|\n/);
+        const lines = text.split(/\r\n|\n/).filter(l => l.trim() !== '');
+        if (lines.length === 0) {
+            alert("File CSV kosong.");
+            return;
+        }
+
+        // Deteksi header kolom secara dinamis
+        const headerCols = parseCSVLine(lines[0]).map(h => h.toLowerCase());
+        
+        let idxNip = -1;
+        let idxNama = -1;
+        let idxPangkat = -1;
+        let idxJabatan = -1;
+
+        headerCols.forEach((h, idx) => {
+            if (h.includes('nip')) idxNip = idx;
+            else if (h.includes('nama')) idxNama = idx;
+            else if (h.includes('pangkat') || h.includes('gol')) idxPangkat = idx;
+            else if (h.includes('jabatan')) idxJabatan = idx;
+        });
+
+        const hasHeader = idxNip !== -1 || idxNama !== -1;
+        let startIndex = hasHeader ? 1 : 0;
         const importedList = [];
 
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i].trim();
-            if (!line) continue;
+        for (let i = startIndex; i < lines.length; i++) {
+            const cols = parseCSVLine(lines[i]);
+            if (cols.length < 2) continue;
 
-            const cols = line.split(/;|,/).map(c => c.trim().replace(/^"|"$/g, ''));
-            
-            if (i === 0 && (cols[0].toLowerCase().includes('nama') || cols[1]?.toLowerCase().includes('nip'))) {
-                continue;
+            let nip = '';
+            let nama = '';
+            let pangkat = '';
+            let jabatan = '';
+
+            if (hasHeader) {
+                nip = idxNip !== -1 ? cols[idxNip] : '';
+                nama = idxNama !== -1 ? cols[idxNama] : '';
+                pangkat = idxPangkat !== -1 ? cols[idxPangkat] : '';
+                jabatan = idxJabatan !== -1 ? cols[idxJabatan] : '';
+            } else {
+                // Fallback urutan standar: NIP, NAMA, PANGKAT, JABATAN
+                if (/^\d{15,20}$/.test(cols[0])) {
+                    nip = cols[0];
+                    nama = cols[1] || '';
+                    pangkat = cols[2] || '';
+                    jabatan = cols[3] || 'Pelaksana / Staf';
+                } else {
+                    // Fallback alternatif jika kolom pertama adalah Nama
+                    nama = cols[0];
+                    nip = cols[1] || '';
+                    pangkat = cols[2] || '';
+                    jabatan = cols[3] || 'Pelaksana / Staf';
+                }
             }
 
-            if (cols.length >= 2) {
+            if (nama || nip) {
                 importedList.push({
-                    nama: cols[0].toUpperCase(),
-                    nip: cols[1] || '',
-                    pangkat: cols[2] || '',
-                    jabatan: cols[3] || 'Pelaksana / Staf'
+                    nip: nip || '-',
+                    nama: nama.toUpperCase(),
+                    pangkat: pangkat || '',
+                    jabatan: jabatan || 'Pelaksana / Staf'
                 });
             }
         }
@@ -626,10 +690,10 @@ async function importAsnFromCsv() {
 }
 
 function downloadCsvTemplate() {
-    const csvContent = "data:text/csv;charset=utf-8,NAMA,NIP,PANGKAT_GOLONGAN,JABATAN\n" +
-        "NAMA KEPALA DINAS S.Pd M.Si,196801011988031012,Pembina Utama Muda / IV.c,Kepala Dinas Pendidikan Kepemudaan dan Olahraga\n" +
-        "NAMA SEKRETARIS S.IP,197501012000031002,Pembina / IV.a,Sekretaris Dinas\n" +
-        "NAMA KABID S.AP,198202022005022004,Penata Tingkat I / III.d,Kepala Bidang Pembinaan Ketenagaan";
+    const csvContent = "data:text/csv;charset=utf-8,NIP,NAMA,PANGKAT_GOLONGAN,JABATAN\n" +
+        "196801011988031012,\"NAMA KEPALA DINAS, S.Pd., M.Si.\",Pembina Utama Muda / IV.c,Kepala Dinas Pendidikan Kepemudaan dan Olahraga\n" +
+        "197501012000031002,\"NAMA SEKRETARIS, S.IP\",Pembina / IV.a,Sekretaris Dinas\n" +
+        "198202022005022004,\"NAMA KABID, S.AP\",Penata Tingkat I / III.d,Kepala Bidang Pembinaan Ketenagaan";
     
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
