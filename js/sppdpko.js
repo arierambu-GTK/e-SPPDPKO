@@ -661,8 +661,8 @@ async function importAsnFromCsv() {
 
             if (cleanNama || cleanNip) {
                 importedList.push({
-                    nip: cleanNip || '-',
-                    nama: cleanNama || 'TANPA NAMA',
+                    nip: cleanNip,
+                    nama: cleanNama,
                     pangkat: String(pangkat).trim(),
                     jabatan: String(jabatan).trim() || 'Pelaksana / Staf'
                 });
@@ -675,15 +675,18 @@ async function importAsnFromCsv() {
         }
 
         if (window.AppDB) {
-            await window.AppDB.bulkSaveMasterAsn(importedList);
-            masterASN = await window.AppDB.getMasterAsn();
-        }
+    const res = await window.AppDB.bulkSaveMasterAsn(importedList);
+    if (res && res.error) {
+        alert("Data tersimpan lokal, namun gagal sinkron database.");
+    }
+    masterASN = await window.AppDB.getMasterAsn();
+}
 
-        masterASN = sortASNByHirarki(masterASN);
-        populateSelects();
-        renderPengikutTable();
-        fileInput.value = '';
-        alert(`Berhasil mengimpor ${importedList.length} data ASN ke database master_pelaksana!`);
+masterASN = sortASNByHirarki(masterASN);
+populateSelects();
+renderPengikutTable();
+fileInput.value = '';
+alert(`Proses import selesai (${importedList.length} baris diproses).`);
     };
 
     reader.readAsText(file);
