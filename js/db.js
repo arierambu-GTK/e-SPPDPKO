@@ -10,7 +10,7 @@
 
 // Konfigurasi Supabase Client
 const SUPABASE_URL = 'https://qhflpzinfgpspjmjfgjd.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFoZmxpzmluZ2Bwc3BqbWpmZ2pkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1OTQ0MDcsImV4cCI6MjExMDE3MDQwN30.nNRlb7T-Ps66AtkA2XtmV09ArcXZrkiJYGV0Zvh9Whc';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFoZmxwemluZmdwc3BqbWpmZ2pkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1OTQ0MDcsImV4cCI6MjExMDE3MDQwN30.nNRlb7T-Ps66AtkA2XtmV09ArcXZrkiJYGV0Zvh9Whc';
 
 let supabaseClient = null;
 if (window.supabase && typeof window.supabase.createClient === 'function') {
