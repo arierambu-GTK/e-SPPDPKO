@@ -14,12 +14,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>e - SPPD Terpadu - Dinas Pendidikan, Kepemudaan dan Olahraga</title>
+    <title>e-SPPD Terpadu - Dinas Pendidikan, Kepemudaan dan Olahraga</title>
     
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0c4a6e">
-    <link rel="apple-touch-icon" href="https://offeebouiohweqlgyccx.supabase.co/storage/v1/object/public/image/logo_st.png">
-    <link rel="icon" type="image/png" href="https://offeebouiohweqlgyccx.supabase.co/storage/v1/object/public/image/logo_st.png">
+    <meta name="theme-color" content="#ea580c">
+    <link rel="apple-touch-icon" href="https://qhflpzinfgpspjmjfgjd.supabase.co/storage/v1/object/public/gambar/logo_st.png">
+    <link rel="icon" type="image/png" href="https://qhflpzinfgpspjmjfgjd.supabase.co/storage/v1/object/public/gambar/logo_st.png">
 
     <!-- Tailwind CSS & Font Awesome -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -33,12 +33,12 @@
                     fontFamily: { sans: ['Inter', 'sans-serif'] },
                     colors: {
                         gov: {
-                            50: '#f0f7ff', 
-                            100: '#e0effe', 
-                            600: '#0284c7',
-                            700: '#0369a1', 
-                            800: '#075985', 
-                            900: '#0c4a6e',
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                            800: '#9a3412',
+                            900: '#7c2d12',
                         }
                     }
                 }
@@ -49,12 +49,12 @@
     <style>
         .bg-glow-1 {
             position: absolute; top: -8rem; left: -8rem; width: 24rem; height: 24rem;
-            background-color: rgba(14, 165, 233, 0.15); border-radius: 9999px; filter: blur(48px); pointer-events: none;
+            background-color: rgba(234, 88, 12, 0.16); border-radius: 9999px; filter: blur(48px); pointer-events: none;
         }
 
         .bg-glow-2 {
             position: absolute; bottom: -8rem; right: -8rem; width: 24rem; height: 24rem;
-            background-color: rgba(99, 102, 241, 0.15); border-radius: 9999px; filter: blur(48px); pointer-events: none;
+            background-color: rgba(124, 45, 18, 0.18); border-radius: 9999px; filter: blur(48px); pointer-events: none;
         }
 
         .module-card {
@@ -63,12 +63,12 @@
         }
 
         .module-card:hover {
-            border-color: #0284c7 !important;
-            background-color: #f0f9ff !important;
+            border-color: #ea580c !important;
+            background-color: #fff7ed !important;
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-gov-900 via-slate-900 to-indigo-950 font-sans text-slate-900 min-h-screen flex items-center justify-center p-4 relative overflow-x-hidden">
+<body class="bg-gradient-to-br from-gov-900 via-slate-900 to-stone-900 font-sans text-slate-800 min-h-screen flex items-center justify-center p-4 relative overflow-x-hidden">
 
     <!-- Elemen Latar Belakang -->
     <div class="bg-glow-1"></div>
@@ -78,13 +78,13 @@
     <div class="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden relative z-10 my-8">
         
         <!-- Header Branding -->
-        <div class="bg-gov-900 px-6 py-8 text-center text-white relative">
+        <div class="bg-gov-900 px-6 py-8 text-center text-white relative border-b border-gov-800">
             <div class="flex flex-col items-center justify-center space-y-3 mb-2">
-                <img src="https://offeebouiohweqlgyccx.supabase.co/storage/v1/object/public/image/logo_st.png" 
-                     alt="Logo Sumba Timur" class="h-16 w-auto object-contain drop-shadow-md">
+                <img src="https://qhflpzinfgpspjmjfgjd.supabase.co/storage/v1/object/public/gambar/logo_st.png" 
+                     alt="Logo Pemda Sumba Timur" class="h-16 w-auto object-contain drop-shadow-md">
                 <div class="text-center">
                     <h1 class="text-lg sm:text-xl font-extrabold tracking-wide uppercase text-white leading-tight">PEMERINTAH KABUPATEN SUMBA TIMUR</h1>
-                    <p class="text-xs text-sky-200 font-semibold mt-1">Dinas Pendidikan, Kepemudaan dan Olahraga</p>
+                    <p class="text-xs text-gov-100 font-semibold mt-1">Dinas Pendidikan, Kepemudaan dan Olahraga</p>
                 </div>
             </div>
             
@@ -96,22 +96,22 @@
         <!-- Body Selection Hub -->
         <div class="p-6 sm:p-8 space-y-6 bg-white">
             <div class="text-center space-y-1">
-                <h2 class="text-xl font-extrabold text-slate-900">Pilih Layanan Utama</h2>
+                <h2 class="text-xl font-extrabold text-gov-900">Pilih Layanan Utama</h2>
                 <p class="text-xs text-slate-600 font-medium">Mulai Perencanaan Penugasan Tim Atau Langsung Buat Dokumen SPPD.</p>
             </div>
 
             <div class="space-y-3.5" id="moduleOptionGroup">
 
                 <!-- Opsi 1: Modul E-SPPD -->
-                <label for="optSppd" class="module-card relative flex items-start p-4 rounded-xl border-2 border-slate-300 bg-white hover:border-emerald-600 transition-all cursor-pointer group shadow-sm">
+                <label for="optSppd" class="module-card relative flex items-start p-4 rounded-xl border-2 border-slate-300 bg-white hover:border-gov-600 transition-all cursor-pointer group shadow-sm">
                     <div class="flex items-center h-5 mt-0.5">
                         <input id="optSppd" name="module_choice" type="radio" value="sppdpko.html" checked
-                               class="w-4 h-4 text-emerald-600 border-slate-400 focus:ring-emerald-500">
+                               class="w-4 h-4 text-gov-600 border-slate-400 focus:ring-gov-600">
                     </div>
                     <div class="ml-3.5 flex-1">
                         <div class="flex items-center justify-between">
-                            <span class="text-sm font-extrabold text-slate-900 group-hover:text-emerald-800 flex items-center gap-2">
-                                <i class="fa-solid fa-file-contract text-emerald-600 text-base"></i> Modul e-SPPD Terpadu
+                            <span class="text-sm font-extrabold text-slate-900 group-hover:text-gov-800 flex items-center gap-2">
+                                <i class="fa-solid fa-file-contract text-gov-600 text-base"></i> Modul e-SPPD Terpadu
                             </span>
                             <span class="text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 px-2.5 py-0.5 rounded-full">Rekomendasi</span>
                         </div>
@@ -122,17 +122,17 @@
                 </label>
                 
                 <!-- Opsi 2: Modul Rekapitulasi & Kuota OH -->
-                <label for="optPerdin" class="module-card relative flex items-start p-4 rounded-xl border-2 border-slate-300 bg-white hover:border-indigo-600 transition-all cursor-pointer group shadow-sm">
+                <label for="optPerdin" class="module-card relative flex items-start p-4 rounded-xl border-2 border-slate-300 bg-white hover:border-orange-600 transition-all cursor-pointer group shadow-sm">
                     <div class="flex items-center h-5 mt-0.5">
                         <input id="optPerdin" name="module_choice" type="radio" value="rekap.html"
-                               class="w-4 h-4 text-indigo-600 border-slate-400 focus:ring-indigo-500">
+                               class="w-4 h-4 text-orange-600 border-slate-400 focus:ring-orange-600">
                     </div>
                     <div class="ml-3.5 flex-1">
                         <div class="flex items-center justify-between">
-                            <span class="text-sm font-extrabold text-slate-900 group-hover:text-indigo-800 flex items-center gap-2">
-                                <i class="fa-solid fa-chart-line text-indigo-600 text-base"></i> Rekapitulasi Dan Kuota OH
+                            <span class="text-sm font-extrabold text-slate-900 group-hover:text-orange-800 flex items-center gap-2">
+                                <i class="fa-solid fa-chart-line text-orange-600 text-base"></i> Rekapitulasi Dan Kuota OH
                             </span>
-                            <span class="text-[10px] font-bold bg-indigo-100 text-indigo-900 border border-indigo-300 px-2.5 py-0.5 rounded-full">Monitoring SK</span>
+                            <span class="text-[10px] font-bold bg-orange-100 text-orange-900 border border-orange-300 px-2.5 py-0.5 rounded-full">Monitoring SK</span>
                         </div>
                         <p class="text-xs text-slate-700 font-medium mt-1 leading-relaxed">
                             Rekapitulasi laporan perjalanan dinas, monitoring kuota Orang Hari (OH) per Sub Kegiatan, dan ekspor data rekap.
@@ -144,13 +144,13 @@
 
             <!-- Tombol Aksi Utama -->
             <button type="button" onclick="navigateToSelectedModule()" 
-                    class="w-full py-3.5 px-4 bg-gov-800 hover:bg-gov-900 text-white font-extrabold text-sm rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center space-x-2 group">
+                    class="w-full py-3.5 px-4 bg-gov-700 hover:bg-gov-800 text-white font-extrabold text-sm rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center space-x-2 group cursor-pointer">
                 <span>Masuk Ke Modul</span>
                 <i class="fa-solid fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i>
             </button>
 
             <div class="pt-4 border-t border-slate-200 text-center">
-                <p class="text-[11px] text-slate-600 font-bold">© 2026 Dinas Pendidikan, Kepemudaan dan Olahraga - Kab. Sumba Timur</p>
+                <p class="text-[11px] text-slate-600 font-bold">Copyright @ 2026 - Bidang Pembinaan Ketenagaan</p>
             </div>
         </div>
     </div>
@@ -162,10 +162,10 @@
             if (!badge) return;
             
             if (navigator.onLine) {
-                badge.className = 'px-3 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 bg-emerald-600/90 text-white border border-emerald-400/30 shadow-sm';
+                badge.className = 'px-3 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 bg-emerald-600 text-white border border-emerald-400/30 shadow-sm';
                 badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-200 animate-pulse"></span> Mode Online`;
             } else {
-                badge.className = 'px-3 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 bg-amber-600/90 text-white border border-amber-400/30 shadow-sm';
+                badge.className = 'px-3 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 bg-amber-600 text-white border border-amber-400/30 shadow-sm';
                 badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-200"></span> Mode Offline`;
             }
         }
