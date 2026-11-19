@@ -33,32 +33,36 @@ window.AppDB = {
     },
 
     async getMasterAsn() {
-        try {
-            let list = await db.master_pelaksana.toArray();
-            
-            // Jika online dan supabase client aktif, ambil data terbaru dari Supabase
-            if (supabaseClient) {
-                const { data, error } = await supabaseClient.from('master_pelaksana').select('*');
-                if (!error && data && data.length > 0) {
-                    await db.master_pelaksana.bulkPut(data);
-                    list = data;
-                }
-            }
+    try {
+        let list = await db.master_pelaksana.toArray();
 
-            if (list.length === 0) {
-                list = [
-                    { nip: '196801011988031012', nama: 'NAMA KEPALA DINAS, S.Pd., M.Si.', pangkat: 'Pembina Utama Muda / IV.c', jabatan: 'Kepala Dinas Pendidikan Kepemudaan dan Olahraga' },
-                    { nip: '197501012000031002', nama: 'NAMA SEKRETARIS, S.IP', pangkat: 'Pembina / IV.a', jabatan: 'Sekretaris Dinas' },
-                    { nip: '198202022005022004', nama: 'NAMA KABID, S.AP', pangkat: 'Penata Tingkat I / III.d', jabatan: 'Kepala Bidang Pembinaan Ketenagaan' }
-                ];
-                await db.master_pelaksana.bulkPut(list);
+        if (supabaseClient) {
+            const { data, error } = await supabaseClient
+                .from('master_pelaksana')
+                .select('*');
+
+            if (error) {
+                console.error("Gagal mengambil master_pelaksana dari Supabase:", error);
+            } else if (Array.isArray(data) && data.length > 0) {
+                await db.master_pelaksana.bulkPut(data);
+                list = data;
             }
-            return list;
-        } catch (err) {
-            console.error("Error getMasterAsn:", err);
-            return await db.master_pelaksana.toArray();
         }
-    },
+
+        if (list.length === 0) {
+            list = [
+                { nip: '196801011988031012', nama: 'NAMA KEPALA DINAS, S.Pd., M.Si.', pangkat: 'Pembina Utama Muda / IV.c', jabatan: 'Kepala Dinas Pendidikan Kepemudaan dan Olahraga' },
+                { nip: '197501012000031002', nama: 'NAMA SEKRETARIS, S.IP', pangkat: 'Pembina / IV.a', jabatan: 'Sekretaris Dinas' },
+                { nip: '198202022005022004', nama: 'NAMA KABID, S.AP', pangkat: 'Penata Tingkat I / III.d', jabatan: 'Kepala Bidang Pembinaan Ketenagaan' }
+            ];
+            await db.master_pelaksana.bulkPut(list);
+        }
+        return list;
+    } catch (err) {
+        console.error("Error getMasterAsn:", err);
+        return await db.master_pelaksana.toArray();
+    }
+},
 
     async saveMasterAsn(asn) {
         await db.master_pelaksana.put(asn);
@@ -70,13 +74,37 @@ window.AppDB = {
     },
 
     async bulkSaveMasterAsn(list) {
-        await db.master_pelaksana.bulkPut(list);
-        try {
-            if (supabaseClient) {
-                await supabaseClient.from('master_pelaksana').upsert(list);
-            }
-        } catch (e) { console.warn("Sync Supabase offline:", e); }
-    },
+    const cleanList = (Array.isArray(list) ? list : [])
+        .map(item => ({
+            nip: String(item.nip ?? '').trim(),
+            nama: String(item.nama ?? '').trim(),
+            pangkat: String(item.pangkat ?? '').trim(),
+            jabatan: String(item.jabatan ?? '').trim()
+        }))
+        .filter(item => item.nip !== '' && item.nip !== '-' && item.nama !== '');
+
+    if (cleanList.length === 0) {
+        console.warn("bulkSaveMasterAsn: tidak ada data ASN valid (NIP & Nama wajib ada).");
+        return { ok: false, count: 0 };
+    }
+
+    await db.master_pelaksana.bulkPut(cleanList);
+
+    if (supabaseClient) {
+        const { data, error } = await supabaseClient
+            .from('master_pelaksana')
+            .upsert(cleanList, { onConflict: 'nip' })
+            .select();
+
+        if (error) {
+            console.error("Gagal upsert master_pelaksana ke Supabase:", error);
+            return { ok: false, error, count: cleanList.length };
+        }
+        return { ok: true, data, count: cleanList.length };
+    }
+
+    return { ok: true, count: cleanList.length };
+},
 
     async deleteMasterAsn(nip) {
         await db.master_pelaksana.delete(nip);
