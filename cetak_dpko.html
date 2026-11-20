@@ -1025,7 +1025,8 @@
                 document.getElementById('sppd-nipPelaksana').textContent = recordData.nipPelaksana || '-';
                 document.getElementById('sppd-pangkatPelaksana').textContent = pangkatDinamis;
                 document.getElementById('sppd-jabatanPelaksana').textContent = recordData.jabatanPelaksana || '-';
-                document.getElementById('sppd-maksudPerdin').textContent = maksudDinamis;
+                document.getElementById('sppd-tingkatan').textContent = recordData.tingkatPerdin || 'D';
+				document.getElementById('sppd-maksudPerdin').textContent = maksudDinamis;
                 document.getElementById('sppd-alatAngkut').textContent = recordData.alatAngkutan || 'Kendaraan Dinas / Umum';
                 document.getElementById('sppd-tempatBerangkat').textContent = recordData.tempatBerangkat || 'Waingapu';
                 document.getElementById('sppd-tempatTujuan').textContent = recordData.tempatTujuan || '-';
@@ -1034,7 +1035,6 @@
                 document.getElementById('sppd-tglKembali').textContent = formatTanggalIndo(recordData.tglKembali || recordData.tglMulai) || '-';
                 document.getElementById('sppd-kodeSK').textContent = recordData.kodeSK || '-';
                 document.getElementById('sppd-ttd-tgl').textContent = formatTanggalIndo(recordData.tglMulai) || '-';
-
                 document.getElementById('sppd-ttd-nama').textContent = recordData.namaKadis || 'NAMA KEPALA DINAS, S.Pd., M.Si.';
                 document.getElementById('sppd-ttd-nip').textContent = recordData.nipKadis || '196801011988031012';
                 document.getElementById('sppd-ttd-pangkat').textContent = recordData.pangkatKadis || 'Pembina Utama Muda';
