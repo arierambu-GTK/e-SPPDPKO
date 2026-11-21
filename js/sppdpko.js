@@ -708,7 +708,7 @@ async function importAsnFromCsv() {
 
 function downloadCsvTemplate() {
     const csvContent = "data:text/csv;charset=utf-8,NIP,NAMA,PANGKAT_GOLONGAN,JABATAN\n" +
-        "196801011988031012,\"NAMA KEPALA DINAS, S.Pd., M.Si.\",Pembina Utama Muda / IV.c,Kepala Dinas Pendidikan Kepemudaan dan Olahraga\n" +
+        "196912302002121006,\"IMANUEL TAKANDJANJI, SE\",Pembina Tk. I / IV.b,Kepala Dinas Pendidikan Kepemudaan dan Olahraga\n" +
         "197501012000031002,\"NAMA SEKRETARIS, S.IP\",Pembina / IV.a,Sekretaris Dinas\n" +
         "198202022005022004,\"NAMA KABID, S.AP\",Penata Tingkat I / III.d,Kepala Bidang Pembinaan Ketenagaan";
 
