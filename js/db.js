@@ -43,7 +43,7 @@ window.AppDB = {
             }
             if (list.length === 0) {
                 list = [
-                    { nip: '196801011988031012', nama: 'NAMA KEPALA DINAS, S.Pd., M.Si.', pangkat: 'Pembina Utama Muda / IV.c', jabatan: 'Kepala Dinas Pendidikan Kepemudaan dan Olahraga' },
+                    { nip: '196912302002121006', nama: 'IMANUEL TAKANDJANDJI, SE', pangkat: 'Pembina Tk. I / IV.b', jabatan: 'Kepala Dinas Pendidikan Kepemudaan dan Olahraga' },
                     { nip: '197501012000031002', nama: 'NAMA SEKRETARIS, S.IP', pangkat: 'Pembina / IV.a', jabatan: 'Sekretaris Dinas' },
                     { nip: '198202022005022004', nama: 'NAMA KABID, S.AP', pangkat: 'Penata Tingkat I / III.d', jabatan: 'Kepala Bidang Pembinaan Ketenagaan' }
                 ];
