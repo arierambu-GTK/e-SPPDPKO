@@ -359,10 +359,10 @@ async function handleFormSubmit(e) {
         nipPejabatTujuan: '-',
 
         // Identitas Kepala Dinas (Kadis)
-        namaKadis: document.getElementById('namaKadis')?.value.trim() || 'NAMA KEPALA DINAS, S.Pd., M.Si.',
-        nipKadis: document.getElementById('nipKadis')?.value.trim() || '196801011988031012',
-        pangkatKadis: document.getElementById('pangkatKadis')?.value.trim() || 'Pembina Utama Muda',
-        golKadis: document.getElementById('golKadis')?.value.trim() || 'IV/c',
+        namaKadis: document.getElementById('namaKadis')?.value.trim() || 'IMANUEL TAKANDJANJI, SE',
+        nipKadis: document.getElementById('nipKadis')?.value.trim() || '196912302002121006',
+        pangkatKadis: document.getElementById('pangkatKadis')?.value.trim() || 'Pembina Tk. I',
+        golKadis: document.getElementById('golKadis')?.value.trim() || 'IV/b',
 
         // Parameter Pejabat Pembuat Komitmen (PPK)
         namaPPK: document.getElementById('namaPPK')?.value.trim() || '',
