@@ -11,13 +11,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rekapitulasi Perjalanan Dinas - e-SPPD Dinas PKO</title>
+    <title>Rekapitulasi & Monitoring Kuota OH - e-SPPD Dinas PKO</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#ea580c">
-    <link rel="icon" type="image/png" href="https://offeebouiohweqlgyccx.supabase.co/storage/v1/object/public/image/logo_st.png">
+    <link rel="icon" type="image/png" href="https://qhflpzinfgpspjmjfgjd.supabase.co/storage/v1/object/public/gambar/logo_st.png">
 
-    <!-- CDN Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -38,25 +37,37 @@
             }
         };
     </script>
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; }
+        }
+    </style>
 </head>
 <body class="bg-slate-100 font-sans text-slate-800 min-h-screen flex flex-col justify-between">
 
     <!-- HEADER NAVIGATION -->
-    <header class="bg-gov-900 text-white shadow-md sticky top-0 z-30">
+    <header class="bg-gov-900 text-white shadow-md sticky top-0 z-30 no-print">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
+            <div class="flex flex-wrap items-center justify-between py-2 sm:h-16 gap-2">
                 <div class="flex items-center space-x-3">
-                    <img src="https://offeebouiohweqlgyccx.supabase.co/storage/v1/object/public/image/logo_st.png" alt="Logo" class="h-10 w-auto object-contain">
+                    <img src="https://qhflpzinfgpspjmjfgjd.supabase.co/storage/v1/object/public/gambar/logo_st.png" alt="Logo" class="h-10 w-auto object-contain">
                     <div>
-                        <h1 class="font-bold text-base sm:text-lg leading-tight">Rekapitulasi Perjalanan Dinas</h1>
+                        <h1 class="font-bold text-base sm:text-lg leading-tight">Rekapitulasi & Kuota OH</h1>
                         <p class="text-xs text-gov-100">Dinas Pendidikan, Kepemudaan dan Olahraga</p>
                     </div>
                 </div>
 
-                <div class="flex items-center space-x-3">
+                <div class="flex items-center space-x-2">
                     <div id="networkBadge" class="px-2.5 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 bg-emerald-600 text-white shadow-sm"></div>
+                    <button type="button" onclick="syncFromServer()" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-sm cursor-pointer" title="Muat Ulang Data dari Supabase">
+                        <i class="fa-solid fa-rotate" id="syncIcon"></i> Sinkron
+                    </button>
                     <a href="sppdpko.html" class="bg-gov-700 hover:bg-gov-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
-                        <i class="fa-solid fa-file-pen"></i> Form Input SPPD
+                        <i class="fa-solid fa-file-pen"></i> Form SPPD
+                    </a>
+                    <a href="index.html" class="bg-gov-800 hover:bg-gov-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-sm border border-orange-400/30">
+                        <i class="fa-solid fa-house"></i> Portal
                     </a>
                 </div>
             </div>
@@ -66,24 +77,46 @@
     <!-- MAIN CONTAINER -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-        <!-- FILTER & KONTROL REKAP -->
+        <!-- RINGKASAN MONITORING KUOTA ORANG HARI (OH) PER SUB KEGIATAN -->
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
+            <div class="flex items-center justify-between border-b pb-3">
+                <div>
+                    <h2 class="text-base font-bold text-gov-900"><i class="fa-solid fa-gauge-high text-gov-700 mr-2"></i> Monitoring Realisasi Kuota Orang Hari (OH)</h2>
+                    <p class="text-xs text-slate-500">Perbandingan pagu kuota OH dengan pemakaian aktual berdasarkan data SPPD tersimpan.</p>
+                </div>
+            </div>
+            <div id="quotaCardsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="text-xs text-slate-400 italic">Memuat data kuota sub kegiatan...</div>
+            </div>
+        </div>
+
+        <!-- FILTER & KONTROL REKAP -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4 no-print">
             <div class="flex flex-col md:flex-row items-center justify-between gap-4 border-b pb-4">
                 <div>
-                    <h2 class="text-base font-bold text-gov-900"><i class="fa-solid fa-chart-pie text-gov-700 mr-2"></i> Filter & Laporan Rekapitulasi</h2>
-                    <p class="text-xs text-slate-500">Pilih sub kegiatan atau rentang tanggal untuk melakukan rekapitulasi data.</p>
+                    <h2 class="text-base font-bold text-gov-900"><i class="fa-solid fa-filter text-gov-700 mr-2"></i> Filter & Laporan Rekapitulasi</h2>
+                    <p class="text-xs text-slate-500">Saring data berdasarkan Sub Kegiatan, nama pelaksana, atau rentang tanggal.</p>
                 </div>
-                <button type="button" onclick="window.print()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 shadow-sm cursor-pointer">
-                    <i class="fa-solid fa-print"></i> Cetak Rekapitulasi
-                </button>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="exportToCSV()" class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 shadow-sm cursor-pointer">
+                        <i class="fa-solid fa-file-csv"></i> Ekspor CSV
+                    </button>
+                    <button type="button" onclick="window.print()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 shadow-sm cursor-pointer">
+                        <i class="fa-solid fa-print"></i> Cetak Rekapitulasi
+                    </button>
+                </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Sub Kegiatan</label>
                     <select id="filterSK" onchange="filterData()" class="w-full p-2.5 text-xs border rounded-lg border-slate-300 font-semibold bg-slate-50">
                         <option value="">Semua Sub Kegiatan</option>
                     </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Cari Pelaksana / No. Surat</label>
+                    <input type="text" id="filterKeyword" oninput="filterData()" placeholder="Ketik nama / nomor..." class="w-full p-2 text-xs border rounded-lg border-slate-300">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Dari Tanggal</label>
@@ -100,7 +133,10 @@
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
             <div class="flex items-center justify-between">
                 <h3 class="font-bold text-sm text-slate-800 uppercase">Daftar Rekap Perjalanan Dinas</h3>
-                <span class="text-xs font-semibold text-slate-500">Total Data: <span id="countData">0</span></span>
+                <div class="flex items-center gap-4 text-xs font-semibold text-slate-600">
+                    <span>Total OH Terfilter: <strong id="totalOHFiltered" class="text-gov-700">0 OH</strong></span>
+                    <span>Jumlah SPPD: <strong id="countData" class="text-slate-900">0</strong></span>
+                </div>
             </div>
 
             <div class="overflow-x-auto">
@@ -109,9 +145,10 @@
                         <tr class="bg-slate-100 border-b text-slate-700 font-bold uppercase">
                             <th class="p-3 text-center w-10">No</th>
                             <th class="p-3">No. ST / SPPD</th>
+                            <th class="p-3">Sub Kegiatan</th>
                             <th class="p-3">Pelaksana Utama & Pengikut</th>
                             <th class="p-3">Tujuan & Maksud Perdin</th>
-                            <th class="p-3 text-center">Waktu Pelaksanaan</th>
+                            <th class="p-3 text-center">Waktu & OH</th>
                             <th class="p-3 text-right">Biaya Realisasi</th>
                             <th class="p-3 text-center no-print">Aksi</th>
                         </tr>
@@ -130,16 +167,16 @@
     </main>
 
     <!-- FOOTER -->
-    <footer class="bg-gov-900 text-white text-center py-3 border-t border-gov-800 text-xs mt-8">
+    <footer class="bg-gov-900 text-white text-center py-3 border-t border-gov-800 text-xs mt-8 no-print">
         <p>Copyright @ 2026 - Dinas Pendidikan, Kepemudaan dan Olahraga Sumba Timur</p>
     </footer>
 
     <!-- SCRIPT LOGIKA REKAP -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/db.js"></script>
     <script>
         let allRecords = [];
         let masterSK = [];
+        let currentFiltered = [];
 
         function updateNetworkBadge() {
             const badge = document.getElementById('networkBadge');
@@ -152,24 +189,88 @@
                 badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-white"></span> Offline`;
             }
         }
-        window.addEventListener('online', updateNetworkBadge);
+        window.addEventListener('online', () => { updateNetworkBadge(); syncFromServer(); });
         window.addEventListener('offline', updateNetworkBadge);
         document.addEventListener('DOMContentLoaded', updateNetworkBadge);
 
         document.addEventListener('DOMContentLoaded', async () => {
-            if (window.AppDB) {
-                allRecords = await window.AppDB.getAllRecords();
-                masterSK = await window.AppDB.getMasterSK();
-            }
-            populateSKDropdown();
-            renderRekapTable(allRecords);
+            await syncFromServer();
         });
+
+        async function syncFromServer() {
+            const icon = document.getElementById('syncIcon');
+            if (icon) icon.classList.add('fa-spin');
+            try {
+                if (window.AppDB) {
+                    masterSK = await window.AppDB.getMasterSK();
+                    allRecords = await window.AppDB.getAllRecords();
+                }
+                populateSKDropdown();
+                renderQuotaSummary();
+                filterData();
+            } catch (err) {
+                console.error("Gagal sinkronisasi data rekap:", err);
+            } finally {
+                if (icon) setTimeout(() => icon.classList.remove('fa-spin'), 400);
+            }
+        }
 
         function populateSKDropdown() {
             const sel = document.getElementById('filterSK');
             if (!sel) return;
+            const prevVal = sel.value;
+            sel.innerHTML = '<option value="">Semua Sub Kegiatan</option>';
             masterSK.forEach(sk => {
                 sel.innerHTML += `<option value="${sk.kode}">${sk.kode} - ${sk.nama}</option>`;
+            });
+            sel.value = prevVal;
+        }
+
+        function hitungOHRecord(item) {
+            const validPengikut = Array.isArray(item.pengikut)
+                ? item.pengikut.filter(p => p && (p.nama || p.namaPengikut || p.namaAsn))
+                : [];
+            const jumlahPersonel = 1 + validPengikut.length;
+            const lamaHari = parseInt(item.lamaHari) || 1;
+            return jumlahPersonel * lamaHari;
+        }
+
+        function renderQuotaSummary() {
+            const container = document.getElementById('quotaCardsContainer');
+            if (!container) return;
+
+            if (!masterSK || masterSK.length === 0) {
+                container.innerHTML = `<div class="text-xs text-slate-400 italic">Belum ada master Sub Kegiatan terdaftar.</div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            masterSK.forEach(sk => {
+                const paguOH = parseInt(sk.quota || sk.kuota) || 0;
+                const relatedRecords = allRecords.filter(r => r.kodeSK === sk.kode);
+                const terpakaiOH = relatedRecords.reduce((sum, r) => sum + hitungOHRecord(r), 0);
+                const sisaOH = paguOH - terpakaiOH;
+                const persen = paguOH > 0 ? Math.min(100, Math.round((terpakaiOH / paguOH) * 100)) : 0;
+
+                const barColor = persen >= 90 ? 'bg-rose-600' : (persen >= 70 ? 'bg-amber-500' : 'bg-emerald-600');
+                const sisaColor = sisaOH < 0 ? 'text-rose-700' : 'text-emerald-700';
+
+                container.innerHTML += `
+                    <div class="border border-slate-200 rounded-xl p-4 bg-slate-50/70 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-mono font-bold text-gov-800 bg-gov-100 px-2 py-0.5 rounded">${sk.kode}</span>
+                            <span class="text-xs font-extrabold ${sisaColor}">Sisa: ${sisaOH} OH</span>
+                        </div>
+                        <p class="text-xs font-bold text-slate-800 line-clamp-2" title="${sk.nama}">${sk.nama}</p>
+                        <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                            <div class="${barColor} h-2 rounded-full transition-all" style="width: ${persen}%"></div>
+                        </div>
+                        <div class="flex justify-between text-[11px] text-slate-600 font-medium">
+                            <span>Terpakai: <strong>${terpakaiOH} OH</strong> (${persen}%)</span>
+                            <span>Pagu: <strong>${paguOH} OH</strong></span>
+                        </div>
+                    </div>
+                `;
             });
         }
 
@@ -181,27 +282,35 @@
             if (!tgl) return '-';
             const d = new Date(tgl);
             if (isNaN(d.getTime())) return tgl;
-            return `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+            return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth()+1).padStart(2, '0')}/${d.getFullYear()}`;
         }
 
         function filterData() {
             const kodeSK = document.getElementById('filterSK').value;
+            const keyword = (document.getElementById('filterKeyword')?.value || '').toLowerCase().trim();
             const tglMulai = document.getElementById('filterTglMulai').value;
             const tglSelesai = document.getElementById('filterTglSelesai').value;
 
-            let filtered = allRecords.filter(item => {
-                let matchSK = !kodeSK || item.kodeSK === kodeSK;
-                let matchStart = !tglMulai || (item.tglMulai && item.tglMulai >= tglMulai);
-                let matchEnd = !tglSelesai || (item.tglMulai && item.tglMulai <= tglSelesai);
-                return matchSK && matchStart && matchEnd;
+            currentFiltered = allRecords.filter(item => {
+                const matchSK = !kodeSK || item.kodeSK === kodeSK;
+                const matchStart = !tglMulai || (item.tglMulai && item.tglMulai >= tglMulai);
+                const matchEnd = !tglSelesai || (item.tglMulai && item.tglMulai <= tglSelesai);
+                const matchKw = !keyword ||
+                    (item.namaPelaksana && item.namaPelaksana.toLowerCase().includes(keyword)) ||
+                    (item.noSuratTugas && item.noSuratTugas.toLowerCase().includes(keyword)) ||
+                    (item.noSPPD && item.noSPPD.toLowerCase().includes(keyword)) ||
+                    (item.tempatTujuan && item.tempatTujuan.toLowerCase().includes(keyword));
+
+                return matchSK && matchStart && matchEnd && matchKw;
             });
 
-            renderRekapTable(filtered);
+            renderRekapTable(currentFiltered);
         }
 
         function renderRekapTable(data) {
             const tbody = document.getElementById('rekapTableBody');
             const countEl = document.getElementById('countData');
+            const ohEl = document.getElementById('totalOHFiltered');
             const totalEl = document.getElementById('grandTotalRealisasi');
             if (!tbody) return;
 
@@ -209,21 +318,26 @@
             countEl.textContent = data.length;
 
             if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400 italic">Tidak ada data rekapitulasi perjalanan dinas.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-400 italic">Tidak ada data rekapitulasi perjalanan dinas.</td></tr>`;
                 totalEl.textContent = formatRupiah(0);
+                if (ohEl) ohEl.textContent = '0 OH';
                 return;
             }
 
             let grandTotal = 0;
+            let totalOH = 0;
+
             data.forEach((item, idx) => {
                 const totalBiaya = parseFloat(item.totalBiaya) || 0;
+                const ohItem = hitungOHRecord(item);
                 grandTotal += totalBiaya;
+                totalOH += ohItem;
 
                 let pengikutHTML = '';
                 if (Array.isArray(item.pengikut) && item.pengikut.length > 0) {
                     item.pengikut.forEach(p => {
                         const namaP = p ? (p.nama || p.namaPengikut || p.namaAsn) : '';
-                        if (namaP) pengikutHTML += `<br><span class="text-[10px] text-slate-500">+ ${namaP.toUpperCase()}</span>`;
+                        if (namaP) pengikutHTML += `<br><span class="text-[10px] text-slate-500 font-normal">+ ${namaP.toUpperCase()}</span>`;
                     });
                 }
 
@@ -234,6 +348,7 @@
                             ${item.noSuratTugas || '-'}<br>
                             <span class="text-[10px] text-slate-400 font-normal">SPPD: ${item.noSPPD || '-'}</span>
                         </td>
+                        <td class="p-3 font-mono text-[11px] text-slate-700">${item.kodeSK || '-'}</td>
                         <td class="p-3 uppercase font-bold text-slate-800">
                             ${item.namaPelaksana || '-'}${pengikutHTML}
                         </td>
@@ -243,7 +358,7 @@
                         </td>
                         <td class="p-3 text-center font-mono text-[11px]">
                             ${formatTgl(item.tglMulai)} s/d ${formatTgl(item.tglKembali)}<br>
-                            <span class="font-bold text-gov-700">(${item.lamaHari || 1} Hari)</span>
+                            <span class="font-bold text-gov-700">(${item.lamaHari || 1} Hr / ${ohItem} OH)</span>
                         </td>
                         <td class="p-3 text-right font-bold text-emerald-700">
                             ${formatRupiah(totalBiaya)}
@@ -258,6 +373,35 @@
             });
 
             totalEl.textContent = formatRupiah(grandTotal);
+            if (ohEl) ohEl.textContent = `${totalOH} OH`;
+        }
+
+        function exportToCSV() {
+            if (!currentFiltered || currentFiltered.length === 0) {
+                alert("Tidak ada data untuk diekspor.");
+                return;
+            }
+            const headers = ["No", "No_Surat_Tugas", "No_SPPD", "Kode_SK", "Pelaksana_Utama", "Tujuan", "Tgl_Mulai", "Tgl_Kembali", "Lama_Hari", "Total_OH", "Total_Biaya"];
+            const rows = currentFiltered.map((item, idx) => [
+                idx + 1,
+                `"${(item.noSuratTugas || '').replace(/"/g, '""')}"`,
+                `"${(item.noSPPD || '').replace(/"/g, '""')}"`,
+                `"${item.kodeSK || ''}"`,
+                `"${(item.namaPelaksana || '').replace(/"/g, '""')}"`,
+                `"${(item.tempatTujuan || '').replace(/"/g, '""')}"`,
+                item.tglMulai || '',
+                item.tglKembali || '',
+                item.lamaHari || 1,
+                hitungOHRecord(item),
+                parseFloat(item.totalBiaya) || 0
+            ]);
+
+            const csvString = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Rekap_SPPD_PKO_${new Date().toISOString().slice(0, 10)}.csv`;
+            link.click();
         }
     </script>
 </body>
