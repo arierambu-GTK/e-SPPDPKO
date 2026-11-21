@@ -4,7 +4,7 @@
   Hosting       : GitHub Pages (Murni Single Page Application / SPA)
   Backend / DB  : Supabase REST API & Supabase Storage
   Nama Halaman  : sppdpko.js
-  Fungsi Halaman: Logika Utama SPPD Dinas PKO (Update: Kadis & PPK).
+  Fungsi Halaman: Logika Utama SPPD Dinas PKO (Update: Kadis, PPK & tingkatPerdin).
   ====================================================================================
 */
 
@@ -114,7 +114,7 @@ function populateSelects() {
             selSK.innerHTML += `<option value="${sk.kode}">${sk.kode} - ${sk.nama} (Kuota: ${quotaVal} OH)</option>`;
         });
     }
-    
+
     renderAsnMasterTable();
     renderSKMasterTable();
     renderHistoryTable();
@@ -148,7 +148,7 @@ function syncTujuanPerdin(val) {
 }
 
 /**
- * Manajamen Pengikut
+ * Manajemen Pengikut
  */
 function addPengikutRow() {
     daftarPengikut.push({
@@ -310,77 +310,96 @@ function proceedToStep2() {
 async function handleFormSubmit(e) {
     e.preventDefault();
 
+    const kodeSKVal = document.getElementById('step1_kodeSK').value;
+    if (!kodeSKVal) {
+        alert("Kode Sub Kegiatan belum dipilih!");
+        switchStep(1);
+        return;
+    }
+
     const lamaHariVal = parseInt(document.getElementById('lamaHari').value) || 1;
     const biayaPerOrangVal = parseFloat(document.getElementById('biayaPerOrang').value) || 0;
     const jumlahPersonel = 1 + (daftarPengikut ? daftarPengikut.length : 0);
     const totalBiayaVal = lamaHariVal * biayaPerOrangVal * jumlahPersonel;
 
-    // Ambil data Bendahara yang dipilih
     const namaBendaharaVal = document.getElementById('selectBendahara').value || '';
     const nipBendaharaVal = document.getElementById('nipBendahara').value || '';
 
-    // Buat Objek Record Presisi Sesuai Header Kolom Supabase (Update Kadis & PPK)
+    // Helper: Kolom bertipe DATE di PostgreSQL harus bernilai null jika kosong
+    const cleanDate = (id) => {
+        const val = document.getElementById(id)?.value;
+        return val && val.trim() !== '' ? val.trim() : null;
+    };
+
     const record = {
         id: Date.now(),
-        noSuratTugas: document.getElementById('noSuratTugas').value || '-',
-        noSPPD: document.getElementById('noSPPD').value || '-',
+        noSuratTugas: document.getElementById('noSuratTugas').value.trim() || '-',
+        noSPPD: document.getElementById('noSPPD').value.trim() || '-',
         tingkatPerdin: document.getElementById('tingkatPerdin')?.value || '-',
-        noBku: '', 
-        kodeSK: document.getElementById('step1_kodeSK').value || '',
+        noBku: '',
+        kodeSK: kodeSKVal,
         sumberDana: document.getElementById('sumberDana').value || 'DAU',
-        dasarPelaksanaan: `DPA Dinas Pendidikan, Kepemudaan dan Olahraga Kabupaten Sumba Timur Tahun Anggaran 2026`,
-        maksudPerdin: document.getElementById('maksudPerdin').value || '-',
-        namaPelaksana: document.getElementById('namaPelaksana').value || '-',
-        nipPelaksana: document.getElementById('nipPelaksana').value || '-',
-        pangkatPelaksana: document.getElementById('pangkatPelaksana').value || '-',
-        jabatanPelaksana: document.getElementById('jabatanPelaksana').value || '-',
-        pengikut: daftarPengikut || [], 
-        tempatBerangkat: document.getElementById('tempatBerangkat').value || 'Waingapu',
-        tempatTujuan: document.getElementById('tempatTujuan').value || '-',
+        dasarPelaksanaan: 'DPA Dinas Pendidikan, Kepemudaan dan Olahraga Kabupaten Sumba Timur Tahun Anggaran 2026',
+        maksudPerdin: document.getElementById('maksudPerdin').value.trim() || '-',
+        namaPelaksana: document.getElementById('namaPelaksana').value.trim() || '-',
+        nipPelaksana: document.getElementById('nipPelaksana').value.trim() || '-',
+        pangkatPelaksana: document.getElementById('pangkatPelaksana').value.trim() || '-',
+        jabatanPelaksana: document.getElementById('jabatanPelaksana').value.trim() || '-',
+        pengikut: Array.isArray(daftarPengikut) ? daftarPengikut.filter(p => p.nama && p.nama.trim() !== '') : [],
+        tempatBerangkat: document.getElementById('tempatBerangkat').value.trim() || 'Waingapu',
+        tempatTujuan: document.getElementById('tempatTujuan').value.trim() || '-',
         alatAngkutan: document.getElementById('alatAngkutan')?.value || '-',
-        tglMulai: document.getElementById('tglMulai').value || null,
-        tglKembali: document.getElementById('tglKembali').value || document.getElementById('tglMulai').value || null,
+        tglMulai: cleanDate('tglMulai'),
+        tglKembali: cleanDate('tglKembali') || cleanDate('tglMulai'),
         lamaHari: lamaHariVal,
         biayaPerOrang: biayaPerOrangVal,
         totalBiaya: totalBiayaVal,
-        namaPejabatTujuan: document.getElementById('namaPejabatTujuan').value || '',
-        jabatanPejabatTujuan: document.getElementById('jabatanPejabatTujuan').value || '',
+        namaPejabatTujuan: document.getElementById('namaPejabatTujuan').value.trim() || '',
+        jabatanPejabatTujuan: document.getElementById('jabatanPejabatTujuan').value.trim() || '',
         nipPejabatTujuan: '-',
-        
+
         // Identitas Kepala Dinas (Kadis)
-        namaKadis: document.getElementById('namaKadis')?.value || 'NAMA KEPALA DINAS, S.Pd., M.Si.',
-        nipKadis: document.getElementById('nipKadis')?.value || '196801011988031012',
-        pangkatKadis: document.getElementById('pangkatKadis')?.value || 'Pembina Utama Muda',
-        golKadis: document.getElementById('golKadis')?.value || 'IV/c',
+        namaKadis: document.getElementById('namaKadis')?.value.trim() || 'NAMA KEPALA DINAS, S.Pd., M.Si.',
+        nipKadis: document.getElementById('nipKadis')?.value.trim() || '196801011988031012',
+        pangkatKadis: document.getElementById('pangkatKadis')?.value.trim() || 'Pembina Utama Muda',
+        golKadis: document.getElementById('golKadis')?.value.trim() || 'IV/c',
 
         // Parameter Pejabat Pembuat Komitmen (PPK)
-        namaPPK: document.getElementById('namaPPK')?.value || '',
-        nipPPK: document.getElementById('nipPPK')?.value || '',
-        pangkatPPK: document.getElementById('pangkatPPK')?.value || '',
-        golPPK: document.getElementById('golPPK')?.value || '',
+        namaPPK: document.getElementById('namaPPK')?.value.trim() || '',
+        nipPPK: document.getElementById('nipPPK')?.value.trim() || '',
+        pangkatPPK: document.getElementById('pangkatPPK')?.value.trim() || '',
+        golPPK: document.getElementById('golPPK')?.value.trim() || '',
 
         namaBendahara: namaBendaharaVal,
         nipBendahara: nipBendaharaVal,
-        laporanHasil: document.getElementById('laporanHasil').value || '',
-        createdAt: new Date().toISOString(),
-          
+        laporanHasil: document.getElementById('laporanHasil').value.trim() || '',
+        created_at: new Date().toISOString(),
+
         // --- TAMBAHAN RUTE 2 ---
-        tempatTujuan2: document.getElementById('tempatTujuan2').value || '',
-        tglTiba2: document.getElementById('tglTiba2').value || '',
-        tglBerangkat2: document.getElementById('tglBerangkat2').value || '',
-        pejabatTujuan2: document.getElementById('pejabatTujuan2').value || '',
-        
+        tempatTujuan2: document.getElementById('tempatTujuan2').value.trim() || '',
+        tglTiba2: cleanDate('tglTiba2'),
+        tglBerangkat2: cleanDate('tglBerangkat2'),
+        pejabatTujuan2: document.getElementById('pejabatTujuan2').value.trim() || '',
+
         // --- TAMBAHAN RUTE 3 ---
-        tempatTujuan3: document.getElementById('tempatTujuan3').value || '',
-        tglTiba3: document.getElementById('tglTiba3').value || '',
-        tglBerangkat3: document.getElementById('tglBerangkat3').value || '',
-        pejabatTujuan3: document.getElementById('pejabatTujuan3').value || '',
-   };
+        tempatTujuan3: document.getElementById('tempatTujuan3').value.trim() || '',
+        tglTiba3: cleanDate('tglTiba3'),
+        tglBerangkat3: cleanDate('tglBerangkat3'),
+        pejabatTujuan3: document.getElementById('pejabatTujuan3').value.trim() || '',
+    };
 
-    if (window.AppDB) await window.AppDB.saveRecord(record);
-    riwayatSPPD.unshift(record);
+    if (window.AppDB) {
+        const res = await window.AppDB.saveRecord(record);
+        if (res && !res.ok) {
+            alert(`Data tersimpan lokal, namun gagal sinkron ke Supabase:\n${res.error?.message || 'Periksa koneksi / RLS Policy'}`);
+        } else {
+            alert("Dokumen SPPD Berhasil Disimpan!");
+        }
+        riwayatSPPD = await window.AppDB.getAllRecords();
+    } else {
+        riwayatSPPD.unshift(record);
+    }
 
-    alert("Dokumen SPPD Berhasil Disimpan!");
     renderHistoryTable();
     switchStep(3);
 }
@@ -490,7 +509,7 @@ function renderAsnMasterTable(filteredList = null) {
     const tbody = document.getElementById('asnTableBody');
     const count = document.getElementById('totalAsnCount');
     if (!tbody) return;
-    
+
     tbody.innerHTML = '';
     const dataToDisplay = filteredList || masterASN;
     count.textContent = dataToDisplay.length;
@@ -520,8 +539,8 @@ function renderAsnMasterTable(filteredList = null) {
 
 function filterAsnTable(keyword) {
     const q = keyword.toLowerCase();
-    const filtered = masterASN.filter(item => 
-        (item.nama && item.nama.toLowerCase().includes(q)) || 
+    const filtered = masterASN.filter(item =>
+        (item.nama && item.nama.toLowerCase().includes(q)) ||
         (item.nip && item.nip.toLowerCase().includes(q)) ||
         (item.jabatan && item.jabatan.toLowerCase().includes(q))
     );
@@ -541,7 +560,7 @@ async function saveAsnMaster(e) {
         await window.AppDB.saveMasterAsn(asnObj);
         masterASN = await window.AppDB.getMasterAsn();
     }
-    
+
     masterASN = sortASNByHirarki(masterASN);
     document.getElementById('formAddAsn').reset();
     populateSelects();
@@ -611,12 +630,9 @@ async function importAsnFromCsv() {
             return;
         }
 
-        // Otomatis deteksi pemisah: jika baris pertama mengandung ';', gunakan ';', jika tidak gunakan ','
         const delimiter = lines[0].includes(';') ? ';' : ',';
-
-        // Baca header baris pertama
         const headerCols = parseCSVLine(lines[0], delimiter).map(h => h.toLowerCase().trim());
-        
+
         let idxNama = -1;
         let idxNip = -1;
         let idxPangkat = -1;
@@ -629,7 +645,6 @@ async function importAsnFromCsv() {
             else if (h.includes('jabatan')) idxJabatan = idx;
         });
 
-        // Jika header terdeteksi, mulai baca dari baris ke-1, jika tidak dari baris ke-0
         const hasHeader = idxNama !== -1 || idxNip !== -1;
         const startIndex = hasHeader ? 1 : 0;
         const importedList = [];
@@ -649,14 +664,12 @@ async function importAsnFromCsv() {
                 pangkat = idxPangkat !== -1 && cols[idxPangkat] !== undefined ? cols[idxPangkat] : '';
                 jabatan = idxJabatan !== -1 && cols[idxJabatan] !== undefined ? cols[idxJabatan] : '';
             } else {
-                // Fallback urutan default berdasarkan struktur file Anda: nama, nip, pangkat, jabatan
                 nama = cols[0] || '';
                 nip = cols[1] || '';
                 pangkat = cols[2] || '';
                 jabatan = cols[3] || '';
             }
 
-            // Bersihkan dan validasi data
             const cleanNip = String(nip).trim().replace(/['"]/g, '');
             const cleanNama = String(nama).trim().toUpperCase();
 
@@ -676,18 +689,18 @@ async function importAsnFromCsv() {
         }
 
         if (window.AppDB) {
-    const res = await window.AppDB.bulkSaveMasterAsn(importedList);
-    if (res && res.error) {
-        alert("Data tersimpan lokal, namun gagal sinkron database.");
-    }
-    masterASN = await window.AppDB.getMasterAsn();
-}
+            const res = await window.AppDB.bulkSaveMasterAsn(importedList);
+            if (res && res.error) {
+                alert("Data tersimpan lokal, namun gagal sinkron database.");
+            }
+            masterASN = await window.AppDB.getMasterAsn();
+        }
 
-masterASN = sortASNByHirarki(masterASN);
-populateSelects();
-renderPengikutTable();
-fileInput.value = '';
-alert(`Proses import selesai (${importedList.length} baris diproses).`);
+        masterASN = sortASNByHirarki(masterASN);
+        populateSelects();
+        renderPengikutTable();
+        fileInput.value = '';
+        alert(`Proses import selesai (${importedList.length} baris diproses).`);
     };
 
     reader.readAsText(file);
@@ -698,7 +711,7 @@ function downloadCsvTemplate() {
         "196801011988031012,\"NAMA KEPALA DINAS, S.Pd., M.Si.\",Pembina Utama Muda / IV.c,Kepala Dinas Pendidikan Kepemudaan dan Olahraga\n" +
         "197501012000031002,\"NAMA SEKRETARIS, S.IP\",Pembina / IV.a,Sekretaris Dinas\n" +
         "198202022005022004,\"NAMA KABID, S.AP\",Penata Tingkat I / III.d,Kepala Bidang Pembinaan Ketenagaan";
-    
+
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
